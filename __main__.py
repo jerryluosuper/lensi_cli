@@ -21,7 +21,7 @@ import codecs
 import subprocess
 
 def Scoop_info(app_name):
-    return subprocess.getoutput('scoop info '+ app_name)
+    os.system('scoop info '+ app_name)
 
 def Scoop_info_lensi(app_name_install,SIP):
     app_json = []
@@ -37,8 +37,7 @@ def Scoop_info_lensi(app_name_install,SIP):
 
 def winget_info_id(app_id):
     cmd = "winget show --id " + app_id
-    pipe = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE,universal_newlines=True).stdout.read()
-    return pipe
+    os.system(cmd)
 
 def choco_install_app(app_name):
     os.system("choco install "+app_name)
@@ -102,8 +101,7 @@ def Scoop_buckets_save(Scoop_install_place):#遍历scoop bucket 存入csv中
         writer.writerow(list_data) #写入csv 
 
 def choco_info(app_name):
-    app_detail = subprocess.getoutput("choco info "+ app_name)
-    return app_detail
+    os.system("choco info "+ app_name)
 
 def choco_search(app_name,limmit_num): #choco搜索解析
     '''
@@ -744,30 +742,35 @@ class Lensi(object):
 
     def info(self,app_name,app_source="all"):
         if app_source == "all":
-            print("QQ")
+            print("From QQ")
             try:
                 qq_id = web_qq_search(app_name,1)[0][4]
             except:
                 print("None")
             else:
                 print(web_qq_info(qq_id))
-            print("360")
+            print("-------------------")
+            print("From 360")
             try:
                 baoku_id = web_360_search("360",app_name,1)[0][4]
             except:
                 print("None")
             else:
                 print(web_baoku_info(baoku_id))
-            print("Hippo")
+            print("-------------------")
+            print("From Hippo")
             try:
                 print(web_hippo_info(app_name))
             except:
                 print("None")
-            print("Scoop")
-            print(Scoop_info(app_name))
-            print("Choco")
-            print(choco_info(app_name))
-            print("Winget")
+            print("-------------------")
+            print("From Scoop")
+            Scoop_info(app_name)
+            print("From Choco")
+            print("-------------------")
+            choco_info(app_name)
+            print("-------------------")
+            print("From Winget")
             try:
                 winget_id  = winget_search(app_name,1)[0][4]
             except:
@@ -797,16 +800,16 @@ class Lensi(object):
             except:
                 print("None")
         elif app_source == "choco":
-            print(choco_info(app_name))
+            choco_info(app_name)
         elif app_source == "scoop":
-            print(Scoop_info(app_name))
+            Scoop_info(app_name)
         elif app_source == "winget":
             try:
                 winget_id  = winget_search(app_name,1)[0][4]
             except:
                 print("None")
             else:
-                print(winget_info_id(winget_id))
+                winget_info_id(winget_id)
 
     def install(self,app_name,app_source="all"):
         if app_name == "scoop" or app_name == "Scoop":
@@ -1079,6 +1082,11 @@ class Lensi(object):
                 Lensi_config.set("Lensi", "winget_num",le_set)
             elif options == "scoop_num":
                 Lensi_config.set("Lensi", "scoop_num",le_set)
+            elif options == "help":
+                os.chdir("D:\Lensi")
+                f = open("config.ini","r")
+                print(f.read())
+                f.close()
             else:
                 print("Sorry, Lensi didn't have this setting.")
             Lensi_config.write(open("config.ini", "w"))

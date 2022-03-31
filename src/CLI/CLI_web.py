@@ -1,15 +1,17 @@
 # TODO json解析
 from urllib import request
-import requests
 from urllib.request import urlopen
 from bs4 import BeautifulSoup
 from urllib.parse import quote
+from fuzzywuzzy import fuzz
+import json
+from xml.dom.minidom import parseString
 def web_qq_info(qq_id):
     headers = {'User-Agent':' Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/64.0.3282.140 Safari/537.36 Edge/18.17763'}
     qq_id_int = int(qq_id)
-    # pprint(qq_id)
+    # print(qq_id)
     qq_info_url = 'https://pc.qq.com/detail/'+ str(qq_id_int%20) + '/detail_' + qq_id + '.html' 
-    # pprint(qq_info_url)
+    # print(qq_info_url)
     qq_info_html_req = request.Request(url=qq_info_url,headers=headers)
     qq_info_html = urlopen(qq_info_html_req)
     qq_info_soup = BeautifulSoup(qq_info_html.read(),"html.parser")
@@ -30,15 +32,15 @@ def web_qq_info(qq_id):
         qq_info_image_url = qq_info_image_url.rstrip(")!important")
         if qq_info_image_url[0] == "/":
             qq_info_image_url = "https:" + qq_info_image_url
-        # pprint(qq_info_image_url)
+        # print(qq_info_image_url)
         return qq_info_image_url
-    # pprint(qq_info_main,"\n",qq_info_home)
+    # print(qq_info_main,"\n",qq_info_home)
 
 def web_baoku_info(baoku_id):
     headers = {'User-Agent':' Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/64.0.3282.140 Safari/537.36 Edge/18.17763'}
-    # pprint(baoku_id)
+    # print(baoku_id)
     baoku_info_url = 'https://baoku.360.cn/soft/show/appid/' + baoku_id
-    pprint(baoku_info_url)
+    print(baoku_info_url)
     baoku_info_html_req = request.Request(url=baoku_info_url,headers=headers)
     baoku_info_html = urlopen(baoku_info_html_req)
     baoku_info_soup = BeautifulSoup(baoku_info_html.read(),"html.parser")
@@ -46,24 +48,24 @@ def web_baoku_info(baoku_id):
     for item in baoku_info_data:
         baoku_info_image_url = item.get('src')
     baoku_info_image_url = "https:" +baoku_info_image_url
-    # pprint(baoku_info_image_url)
+    # print(baoku_info_image_url)
     baoku_icon_data = baoku_info_soup.select('body > div.app-container > div:nth-child(2) > div:nth-child(2) > h1 > img')
     for item in baoku_icon_data:
         baoku_icon_image_url = item.get('src')
     baoku_icon_image_url = "https:" +baoku_icon_image_url
-    pprint(baoku_icon_image_url)
+    print(baoku_icon_image_url)
     baoku_info_url = 'https://baoku.360.cn/soft/show/appid/' + baoku_id + 'd'
-    # pprint(baoku_info_url)
+    # print(baoku_info_url)
     baoku_info_html_req = request.Request(url=baoku_info_url,headers=headers)
     baoku_info_html = urlopen(baoku_info_html_req)
     baoku_info_soup = BeautifulSoup(baoku_info_html.read(),"html.parser")
     baoku_detail = baoku_info_soup.select('body > div.wrap.clearfix > div.main-list.fr > div.app-info > div.app-introduce > div.introduce-txt1 > p')
     for item in baoku_detail:
         baoku_detail_text = item.get_text
-    # pprint(baoku_detail_text)
+    # print(baoku_detail_text)
     baoku_info = [baoku_detail_text,baoku_info_image_url]
     return baoku_info
-    # pprint(baoku_info_main,"\n",baoku_info_home)
+    # print(baoku_info_main,"\n",baoku_info_home)
 
 def web_hippo_info(app_name):
     headers = {'User-Agent':' Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/64.0.3282.140 Safari/537.36 Edge/18.17763'}
@@ -76,62 +78,89 @@ def web_hippo_info(app_name):
         hippo_information = item1.get_text()
     return hippo_information
 
+# def web_360_search(app_name,limmit_num):
+#     headers = {'User-Agent':' Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/64.0.3282.140 Safari/537.36 Edge/18.17763'}
+#     # 伪装标头
+#     app_name_search = quote(app_name)#输入转换成相应格式
+#     # app_name = "geek"
+#     baoku_search_url = 'https://bapi.safe.360.cn/soft/search?keyword='+ app_name_search + '&page=1'
+#     baoku_html_req = request.Request(url=baoku_search_url,headers=headers)
+#     baoku_html = urlopen(baoku_html_req)#使用标头获取html
+#     baoku_soup = BeautifulSoup(baoku_html.read(),"html.parser")
+#     baoku_str = str(baoku_soup)#字符串化 便于查找
+#     # print(baoku_str)
+#     '''
+#     TODO 未使用正则表达式 待优化
+#     '''
+#     baoku_name_search_1 = 0
+#     baoku_version_search_1 = 0
+#     baoku_download_search_1 =0 
+#     baoku_id_search_1 = 0 
+#     baoku_detail_search_1 = 0
+#     baoku_icon_search_1 = 0
+#     # 定义上一次查找结果
+#     baoku_search_all_list = []
+#     limmit_num_search = baoku_str.count('{"softid":')
+#     limmit_num_real = min(limmit_num,limmit_num_search)
+#     #防止找不到更多程序
+#     for i in range(0,limmit_num_real):
+#         baoku_name_search = baoku_str.find('"softname":"',baoku_name_search_1)
+#         baoku_name_search_1 = baoku_name_search + 1
+#         baoku_name = baoku_str[baoku_name_search:int(baoku_str.find(',',baoku_name_search))].strip('"softname":"')
+#         if baoku_name == '':
+#             return baoku_search_all_list #判断是否还有软件
+#         baoku_version_search = baoku_str.find('"version":"',baoku_version_search_1)
+#         baoku_version_search_1 = baoku_version_search + 1
+#         baoku_download_search = baoku_str.find('"soft_download":"',baoku_download_search_1)
+#         baoku_download_search_1 = baoku_download_search + 1
+#         baoku_id_search = baoku_str.find('[{"softid":',baoku_id_search_1)
+#         baoku_detail_search = baoku_str.find('"desc":"',baoku_detail_search_1)
+#         baoku_detail_search_1 = baoku_detail_search + 1
+#         baoku_id_search_1 = baoku_id_search + 1
+#         baoku_icon_search = baoku_str.find('"logo":"',baoku_icon_search_1)
+#         baoku_icon_search_1 = baoku_icon_search + 1
+#         #从上一次查找结果后开始查找，实现识别多个软件
+#         baoku_version= baoku_str[baoku_version_search:int(baoku_str.find(',',baoku_version_search))].strip('"version":"')
+#         baoku_download = baoku_str[baoku_download_search:int(baoku_str.find(',',baoku_download_search))].strip('"soft_download":"')
+#         baoku_id = baoku_str[baoku_id_search :int(baoku_str.find(',',baoku_id_search ))].strip('[{"softid":')
+#         baoku_detail_text = baoku_str[baoku_detail_search :int(baoku_str.find(',',baoku_detail_search ))].strip('"desc":"')
+#         baoku_icon = baoku_str[baoku_icon_search :int(baoku_str.find(',',baoku_icon_search ))].strip('"logo":"')
+#         #截获字符串
+#         baoku_download_url = baoku_download.replace('\\',"")
+#         baoku_icon_url = "https:" + baoku_icon.replace('\\',"") + "g"
+#         baoku_info_url = 'https://baoku.360.cn/soft/show/appid/' + baoku_id + 'd'
+#         #网址处理
+#         baoku_search_all = [baoku_name.strip(",").encode('ascii').decode('unicode_escape'),baoku_version.strip(","),baoku_detail_text.strip(",").encode('ascii').decode('unicode_escape'),baoku_info_url,baoku_id,baoku_download_url.strip(","),baoku_icon_url,fuzz.partial_ratio(app_name,baoku_name.strip(",").encode('ascii').decode('unicode_escape')),"360"]
+#         #整理格式
+#         baoku_search_all_list.append(baoku_search_all)
+#     return baoku_search_all_list
+
 def web_360_search(app_name,limmit_num):
     headers = {'User-Agent':' Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/64.0.3282.140 Safari/537.36 Edge/18.17763'}
     # 伪装标头
     app_name_search = quote(app_name)#输入转换成相应格式
     # app_name = "geek"
+    baoku_search_all_list = []
     baoku_search_url = 'https://bapi.safe.360.cn/soft/search?keyword='+ app_name_search + '&page=1'
     baoku_html_req = request.Request(url=baoku_search_url,headers=headers)
     baoku_html = urlopen(baoku_html_req)#使用标头获取html
-    baoku_soup = BeautifulSoup(baoku_html.read(),"html.parser")
-    baoku_str = str(baoku_soup)#字符串化 便于查找
-    # pprint(baoku_str)
-    '''
-    TODO 未使用正则表达式 待优化
-    '''
-    baoku_name_search_1 = 0
-    baoku_version_search_1 = 0
-    baoku_download_search_1 =0 
-    baoku_id_search_1 = 0 
-    baoku_detail_search_1 = 0
-    baoku_icon_search_1 = 0
-    # 定义上一次查找结果
-    baoku_search_all_list = []
-    limmit_num_search = baoku_str.count('{"softid":')
-    limmit_num_real = min(limmit_num,limmit_num_search)
-    #防止找不到更多程序
-    for i in range(0,limmit_num_real):
-        baoku_name_search = baoku_str.find('"softname":"',baoku_name_search_1)
-        baoku_name_search_1 = baoku_name_search + 1
-        baoku_name = baoku_str[baoku_name_search:int(baoku_str.find(',',baoku_name_search))].strip('"softname":"')
-        if baoku_name == '':
-            return baoku_search_all_list #判断是否还有软件
-        baoku_version_search = baoku_str.find('"version":"',baoku_version_search_1)
-        baoku_version_search_1 = baoku_version_search + 1
-        baoku_download_search = baoku_str.find('"soft_download":"',baoku_download_search_1)
-        baoku_download_search_1 = baoku_download_search + 1
-        baoku_id_search = baoku_str.find('[{"softid":',baoku_id_search_1)
-        baoku_detail_search = baoku_str.find('"desc":"',baoku_detail_search_1)
-        baoku_detail_search_1 = baoku_detail_search + 1
-        baoku_id_search_1 = baoku_id_search + 1
-        baoku_icon_search = baoku_str.find('"logo":"',baoku_icon_search_1)
-        baoku_icon_search_1 = baoku_icon_search + 1
-        #从上一次查找结果后开始查找，实现识别多个软件
-        baoku_version= baoku_str[baoku_version_search:int(baoku_str.find(',',baoku_version_search))].strip('"version":"')
-        baoku_download = baoku_str[baoku_download_search:int(baoku_str.find(',',baoku_download_search))].strip('"soft_download":"')
-        baoku_id = baoku_str[baoku_id_search :int(baoku_str.find(',',baoku_id_search ))].strip('[{"softid":')
-        baoku_detail_text = baoku_str[baoku_detail_search :int(baoku_str.find(',',baoku_detail_search ))].strip('"desc":"')
-        baoku_icon = baoku_str[baoku_icon_search :int(baoku_str.find(',',baoku_icon_search ))].strip('"logo":"')
-        #截获字符串
-        baoku_download_url = baoku_download.replace('\\',"")
-        baoku_icon_url = "https:" + baoku_icon.replace('\\',"") + "g"
-        baoku_info_url = 'https://baoku.360.cn/soft/show/appid/' + baoku_id + 'd'
-        #网址处理
-        baoku_search_all = [baoku_name.strip(",").encode('ascii').decode('unicode_escape'),baoku_version.strip(","),baoku_detail_text.strip(",").encode('ascii').decode('unicode_escape'),baoku_info_url,baoku_id,baoku_download_url.strip(","),baoku_icon_url,fuzz.partial_ratio(app_name,baoku_name.strip(",").encode('ascii').decode('unicode_escape')),"360"]
+    baoku_soup = str(BeautifulSoup(baoku_html.read(),"html.parser"))
+    baoku_json = json.loads(baoku_soup)
+    # print(baoku_json)
+    baoku_num_real = min(baoku_json['data']['total'],limmit_num)
+    for i in range(0,baoku_num_real):
+        baoku_name = baoku_json['data']['list'][i]['softname']
+        baoku_version = baoku_json['data']['list'][i]['version']
+        baoku_detail_text = baoku_json['data']['list'][i]['desc']
+        baoku_id = baoku_json['data']['list'][i]['softid']
+        baoku_info_url = "https://baoku.360.cn/soft/show/appid/" + str(baoku_id)
+        baoku_download_url = baoku_json['data']['list'][i]['soft_download']
+        baoku_icon_url = "https:" + baoku_json['data']['list'][i]['logo']
+        baoku_search_all = [baoku_name,baoku_version,baoku_detail_text,baoku_info_url,baoku_id,baoku_download_url,baoku_icon_url,fuzz.partial_ratio(app_name,baoku_name),"360"]
         #整理格式
         baoku_search_all_list.append(baoku_search_all)
     return baoku_search_all_list
+
 
 def web_qq_search(app_name,limmit_num):
     headers = {'User-Agent':' Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/64.0.3282.140 Safari/537.36 Edge/18.17763'}
@@ -139,7 +168,7 @@ def web_qq_search(app_name,limmit_num):
     # app_name = app_name.encode('unicode_escape').decode('utf-8')
     # app_name_search = app_name.replace("\\","%")
     app_name_search = quote(app_name)
-    # pprint(app_name_search)
+    # print(app_name_search)
     qq_search_url = 'https://s.pcmgr.qq.com/tapi/web/searchcgi.php?type=search&callback=searchCallback&keyword='+ app_name_search +'&page=1&pernum=' +str(limmit_num)+'&more=0'
     qq_html_req = request.Request(url=qq_search_url,headers=headers)
     qq_html = urlopen(qq_html_req)
@@ -150,7 +179,7 @@ def web_qq_search(app_name,limmit_num):
     '''
     qq_search_all=[]
     qq_search_list=[]
-    # pprint(qq_str)
+    # print(qq_str)
     qq_name_find_1 = 0
     qq_version_find_1 = 0
     qq_download_find_1 = 0
@@ -167,21 +196,21 @@ def web_qq_search(app_name,limmit_num):
             for j in range(0,7):
                 qq_name_find = qq_str.find('<![CDATA[',qq_name_find_1)
                 qq_name_find_1 = qq_name_find + 1
-            # pprint(qq_name_find)
+            # print(qq_name_find)
             #有7个“<![CDATA[”！！！ 之后才能找到正确软件名称
         qq_version_find = int(qq_str.find('<versionname>',qq_version_find_1))
         qq_version_find_1 = qq_version_find + 1
-        # pprint(qq_name_find)
+        # print(qq_name_find)
         qq_download_find = qq_str.find('[CDATA[http:',qq_download_find_1)
         qq_download_find_1 = qq_download_find + 1
-        # pprint(qq_name_find)
+        # print(qq_name_find)
         qq_id_find = qq_str.find('{"SoftID":"',qq_id_find_1)
         qq_id_find_1 = qq_id_find + 1 
         qq_detail_find = qq_str.find(r'<feature>\n                <![CDATA[',qq_detail_find_1) - 15
         qq_detail_find_1 = qq_detail_find + 1 
         qq_icon_find = qq_str.find('<logo48>',qq_icon_find_1) 
         qq_icon_find_1 = qq_icon_find + 1 
-        # pprint(qq_name_find)
+        # print(qq_name_find)
         #从上一次查找结果后开始查找，实现识别多个软件
         qq_name = qq_str[qq_name_find:int(qq_str.find("]",qq_name_find))].strip("<![CDATA[")
         if qq_name == '':
@@ -193,9 +222,9 @@ def web_qq_search(app_name,limmit_num):
         qq_icon = qq_str[qq_icon_find:int(qq_str.find('&lt',qq_icon_find))].strip(' <logo48>')
         qq_icon_url = "https://pc3.gtimg.com/softmgr/logo/48/" + qq_icon + "g"
         qq_id_int = int(qq_id)
-    # pprint(qq_id)
+    # print(qq_id)
         qq_info_url = 'https://pc.qq.com/detail/'+ str(qq_id_int%20) + '/detail_' + qq_id + '.html' 
-        # pprint(qq_detail)
+        # print(qq_detail)
         #截获字符串
         qq_download_url = qq_download.replace('\\',"")
         #网址处理
@@ -206,6 +235,41 @@ def web_qq_search(app_name,limmit_num):
     return qq_search_list
     # print (qq_name,"\n","Version:",qq_version,"\n",qq_download_url,"\n")
 
+# def web_qq_search(app_name,limmit_num):
+#     headers = {'User-Agent':' Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/64.0.3282.140 Safari/537.36 Edge/18.17763'}
+#     app_name_search = quote(app_name)
+#     # print(app_name_search)
+#     qq_search_url = 'https://s.pcmgr.qq.com/tapi/web/searchcgi.php?type=search&callback=searchCallback&keyword='+ app_name_search +'&page=1&pernum=' +str(limmit_num)+'&more=0'
+#     qq_html_req = request.Request(url=qq_search_url,headers=headers)
+#     qq_html = urlopen(qq_html_req)
+#     qq_soup = str(BeautifulSoup(qq_html.read(),"html.parser")).strip(");</upgradepercent></point></logo48></logo></feature></https></plugininfo></plugin></free></stable></whatsnewfeature></whatsnew></nickversion></destversion></versionname></publishdate></url></hash></filesize></filename></smartinstallflag></installscriptenable></displayname></soft>")
+#     qq_soup = qq_soup.replace("Callback(","")
+#     # print(qq_soup)
+#     qq_json = json.loads(qq_soup)
+#     qq_id = qq_json["list"][0]["SoftID"]
+#     qq_name = qq_json["list"][0]["SoftName"]
+#     qq_xmlInfo = str(qq_json["list"][0]["xmlInfo"])
+# TODO json xml 解析失败
+#     # print(qq_json)
+#     qq_xml = parseString(qq_xmlInfo)
+#     qq_collection = qq_xml.documentElement
+#     print(qq_collection)
+# #     limmit_num_real = min(limmit_num,qq_str.count('<versionname>'))
+# #     qq_icon_url = "https://pc3.gtimg.com/softmgr/logo/48/" + qq_icon + "g"
+# #     qq_id_int = int(qq_id)
+# # # print(qq_id)
+# #     qq_info_url = 'https://pc.qq.com/detail/'+ str(qq_id_int%20) + '/detail_' + qq_id + '.html' 
+# #     # print(qq_detail)
+# #     #截获字符串
+# #     qq_download_url = qq_download.replace('\\',"")
+# #     #网址处理
+# #     qq_detail_text = qq_detail.encode('ascii').decode('unicode_escape')
+# #     qq_search_all = [qq_name.encode('ascii').decode('unicode_escape'),qq_version,qq_detail_text.strip(";\n            <feature>\n                <![CDATA["),qq_info_url,qq_id,qq_download_url,qq_icon_url,fuzz.partial_ratio(app_name,qq_name.encode('ascii').decode('unicode_escape')),"qq"]
+# #     #整理格式
+# #     qq_search_list.append(qq_search_all)
+# #     return qq_search_list
+# #     # print (qq_name,"\n","Version:",qq_version,"\n",qq_download_url,"\n")
+
 def hippo_search_easy(app_name):
     headers = {'User-Agent':' Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/64.0.3282.140 Safari/537.36 Edge/18.17763'}
     hippo_download_html_url = "https://filehippo.com/download_" + app_name + "/post_download/"
@@ -215,10 +279,10 @@ def hippo_search_easy(app_name):
         hippo_information_html_req = request.Request(url=hippo_information_html_url,headers=headers)
         hippo_information_html = urlopen(hippo_information_html_req)
     except:
-        # pprint("!")
+        # print("!")
         return None
     else:
-        # pprint("From",hippo_download_html_url,"\n","And also from",hippo_information_html_url,"\n")
+        # print("From",hippo_download_html_url,"\n","And also from",hippo_information_html_url,"\n")
         hippo_information_soup = BeautifulSoup(hippo_information_html.read(),"html.parser")
         hippo_information_data = hippo_information_soup.select('body > div.page > div:nth-child(2) > div > div > div > section.mb-l > article > p:nth-child(3)')
         hippo_information_data_name = hippo_information_soup.select('body > div.page > div:nth-child(2) > div > div > div > section.program-header-content > div.program-header-content__main > div > div.media__body > h1')
@@ -250,6 +314,6 @@ def hippo_search_easy(app_name):
         else:
             hippo_search_result_list = [hippo_information_name,hippo_version,hippo_information,hippo_information_html_url,app_name,hippo_download_url,hippo_icon_url,fuzz.partial_ratio(app_name,hippo_information_name),"hippo"]
             hippo_search_result.append(hippo_search_result_list)
-            # pprint(hippo_search_result)
+            # print(hippo_search_result)
             return hippo_search_result
-
+print(web_qq_search("geek",1))

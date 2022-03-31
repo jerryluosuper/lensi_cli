@@ -82,7 +82,7 @@ def Scoop_buckets_save(Scoop_install_place):#遍历scoop bucket 存入csv中
         bucket_list = os.listdir()
         for j in bucket_list:
             buckets_list_install.append(i+"\\"+j.strip(".json"))
-    os.chdir("D:\\")
+    os.chdir("D:\\Lensi\\")
     file_csv = codecs.open("buckets_list_install.csv",'w+','utf-8')#追加
     writer = csv.writer(file_csv, delimiter=' ', quotechar=' ', quoting=csv.QUOTE_MINIMAL)
     for data in buckets_list_install:
@@ -246,7 +246,7 @@ def winget_search(app_name,limmit_num):#winget 搜索解析
 
 def Scoop_buckets_load(): #加载csv到列表
     buckets_list_install = []
-    os.chdir("D:\\")
+    os.chdir("D:\\Lensi\\")
     with open("buckets_list_install.csv", "r", encoding='UTF-8') as file:
         data = csv.reader(file)
         for row in data:
@@ -329,7 +329,7 @@ def web_hippo_info(app_name):
     return hippo_information
 
 
-class myThread (threading.Thread):
+class myThread_search (threading.Thread):
     def __init__(self, source, app_name,limit_num=3):
         threading.Thread.__init__(self)
         self.source = source
@@ -350,54 +350,23 @@ def web_360_search(app_name,limmit_num):
     # 伪装标头
     app_name_search = quote(app_name)#输入转换成相应格式
     # app_name = "geek"
+    baoku_search_all_list = []
     baoku_search_url = 'https://bapi.safe.360.cn/soft/search?keyword='+ app_name_search + '&page=1'
     baoku_html_req = request.Request(url=baoku_search_url,headers=headers)
     baoku_html = urlopen(baoku_html_req)#使用标头获取html
-    baoku_soup = BeautifulSoup(baoku_html.read(),"html.parser")
-    baoku_str = str(baoku_soup)#字符串化 便于查找
-    # pprint(baoku_str)
-    '''
-    TODO 未使用正则表达式 待优化
-    '''
-    baoku_name_search_1 = 0
-    baoku_version_search_1 = 0
-    baoku_download_search_1 =0 
-    baoku_id_search_1 = 0 
-    baoku_detail_search_1 = 0
-    baoku_icon_search_1 = 0
-    # 定义上一次查找结果
-    baoku_search_all_list = []
-    limmit_num_search = baoku_str.count('{"softid":')
-    limmit_num_real = min(limmit_num,limmit_num_search)
-    #防止找不到更多程序
-    for i in range(0,limmit_num_real):
-        baoku_name_search = baoku_str.find('"softname":"',baoku_name_search_1)
-        baoku_name_search_1 = baoku_name_search + 1
-        baoku_name = baoku_str[baoku_name_search:int(baoku_str.find(',',baoku_name_search))].strip('"softname":"')
-        if baoku_name == '':
-            return baoku_search_all_list #判断是否还有软件
-        baoku_version_search = baoku_str.find('"version":"',baoku_version_search_1)
-        baoku_version_search_1 = baoku_version_search + 1
-        baoku_download_search = baoku_str.find('"soft_download":"',baoku_download_search_1)
-        baoku_download_search_1 = baoku_download_search + 1
-        baoku_id_search = baoku_str.find('[{"softid":',baoku_id_search_1)
-        baoku_detail_search = baoku_str.find('"desc":"',baoku_detail_search_1)
-        baoku_detail_search_1 = baoku_detail_search + 1
-        baoku_id_search_1 = baoku_id_search + 1
-        baoku_icon_search = baoku_str.find('"logo":"',baoku_icon_search_1)
-        baoku_icon_search_1 = baoku_icon_search + 1
-        #从上一次查找结果后开始查找，实现识别多个软件
-        baoku_version= baoku_str[baoku_version_search:int(baoku_str.find(',',baoku_version_search))].strip('"version":"')
-        baoku_download = baoku_str[baoku_download_search:int(baoku_str.find(',',baoku_download_search))].strip('"soft_download":"')
-        baoku_id = baoku_str[baoku_id_search :int(baoku_str.find(',',baoku_id_search ))].strip('[{"softid":')
-        baoku_detail_text = baoku_str[baoku_detail_search :int(baoku_str.find(',',baoku_detail_search ))].strip('"desc":"')
-        baoku_icon = baoku_str[baoku_icon_search :int(baoku_str.find(',',baoku_icon_search ))].strip('"logo":"')
-        #截获字符串
-        baoku_download_url = baoku_download.replace('\\',"")
-        baoku_icon_url = "https:" + baoku_icon.replace('\\',"") + "g"
-        baoku_info_url = 'https://baoku.360.cn/soft/show/appid/' + baoku_id + 'd'
-        #网址处理
-        baoku_search_all = [baoku_name.strip(",").encode('ascii').decode('unicode_escape'),baoku_version.strip(","),baoku_detail_text.strip(",").encode('ascii').decode('unicode_escape'),baoku_info_url,baoku_id,baoku_download_url.strip(","),baoku_icon_url,fuzz.partial_ratio(app_name,baoku_name.strip(",").encode('ascii').decode('unicode_escape')),"360"]
+    baoku_soup = str(BeautifulSoup(baoku_html.read(),"html.parser"))
+    baoku_json = json.loads(baoku_soup)
+    # print(baoku_json)
+    baoku_num_real = min(baoku_json['data']['total'],limmit_num)
+    for i in range(0,baoku_num_real):
+        baoku_name = baoku_json['data']['list'][i]['softname']
+        baoku_version = baoku_json['data']['list'][i]['version']
+        baoku_detail_text = baoku_json['data']['list'][i]['desc']
+        baoku_id = baoku_json['data']['list'][i]['softid']
+        baoku_info_url = "https://baoku.360.cn/soft/show/appid/" + str(baoku_id)
+        baoku_download_url = baoku_json['data']['list'][i]['soft_download']
+        baoku_icon_url = "https:" + baoku_json['data']['list'][i]['logo']
+        baoku_search_all = [baoku_name,baoku_version,baoku_detail_text,baoku_info_url,baoku_id,baoku_download_url,baoku_icon_url,fuzz.partial_ratio(app_name,baoku_name),"360"]
         #整理格式
         baoku_search_all_list.append(baoku_search_all)
     return baoku_search_all_list
@@ -597,10 +566,10 @@ def install(file_name,app_name,SO):
             file_list_real = os.listdir()
             if file_list_real[0].find(".exe") == -1:
                 app_folder = app_name +"//" + file_list_real[0]
-                create_shortcut_to_startmenu(app_folder,file_name_real)
+                # create_shortcut_to_startmenu(app_folder,file_name_real)
                 create_shortcut_to_desktop(app_folder,file_name_real)
             else:
-                create_shortcut_to_startmenu(app_name,file_name_real)
+                # create_shortcut_to_startmenu(app_name,file_name_real)
                 create_shortcut_to_desktop(app_name,file_name_real)
         elif file_name_kinds == "msi":
             cmd = "msiexec /i " + "D:\Lensi\Download\\" + file_name + " /norestart  /passive"
@@ -692,24 +661,13 @@ class Lensi(object):
                 os.mkdir("D:\Lensi\APP_Portable")
             if os.path.exists("D:\Lensi\APP_Installed") == False:
                 os.mkdir("D:\Lensi\APP_Installed")
-            start_menu = winshell.startup().replace("Startup","Lensi Apps")
-            # print(start_menu)
-            if os.path.exists(start_menu) == False:
-                os.mkdir(start_menu)
+            # start_menu = winshell.startup().replace("Startup","Lensi Apps")
+            # # print(start_menu)
+            # if os.path.exists(start_menu) == False:
+            #     os.mkdir(start_menu)
             os.chdir("D:\Lensi")
             Lensi_config = configparser.ConfigParser()
-            global EW
-            global qq_num
-            global baoku_num
-            global DAI 
-            global SO
-            global ES
-            global EC
-            global EW
-            global SIP
-            global scoop_num
-            global choco_num
-            global winget_num
+            global EW,qq_num,baoku_num,DAI,SO,ES,EC,EW,SIP,scoop_num,choco_num,winget_num
             Lensi_config.read("config.ini", encoding="utf-8")
             qq_num = Lensi_config.getint("Lensi","qq_num")
             scoop_num = Lensi_config.getint("Lensi", "scoop_num")
@@ -820,6 +778,7 @@ class Lensi(object):
                 pprint(winget_info_id(winget_id))
 
     def install(self,app_name,app_source="all"):
+
         if app_name == "scoop" or app_name == "Scoop":
             Scoop_install_scoop_silence()
         elif app_name == "choco" or app_name == "Choco":
@@ -904,9 +863,9 @@ class Lensi(object):
             if app_name == "Lensit":
                 print("QEIE1284213AAUEUUQQ")
                 print("I don't know what it means.")
-            thread_360 = myThread("360", app_name,baoku_num)
-            thread_qq = myThread("qq", app_name,qq_num)
-            thread_H = myThread("Hippo", app_name,1)
+            thread_360 = myThread_search("360", app_name,baoku_num)
+            thread_qq = myThread_search("qq", app_name,qq_num)
+            thread_H = myThread_search("Hippo", app_name,1)
             #多线程
             search_result = []
             # 开启新线程
@@ -914,13 +873,13 @@ class Lensi(object):
             thread_qq.start()
             thread_H.start()
             if ES == "True":
-                thread_S = myThread( "Scoop", app_name,scoop_num)
+                thread_S = myThread_search( "Scoop", app_name,scoop_num)
                 thread_S.start()
             if EC == "True":
-                thread_C = myThread( "Choco", app_name,choco_num)
+                thread_C = myThread_search( "Choco", app_name,choco_num)
                 thread_C.start()
             if EW == "True":
-                thread_W = myThread( "Winget", app_name,winget_num)
+                thread_W = myThread_search( "Winget", app_name,winget_num)
                 thread_W.start()
             #等待进程
             try:
@@ -995,15 +954,6 @@ class Lensi(object):
                 pprint(winget_search(app_name,limmit_num))
         else:
             print("Lensi doesn't support this source now. /(ㄒoㄒ)/~~")
-    
-    def yiju(self):
-        headers = {'User-Agent':' Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/64.0.3282.140 Safari/537.36 Edge/18.17763'}
-        url = 'https://yijuzhan.com/api/word.php'
-        req = request.Request(url=url,headers=headers)
-        html = urlopen(req)
-        html_text = bytes.decode(html.read())
-        print(html_text)
-        print("(古诗API来自一句)")
 
     def clean(self):
         shutil.rmtree("D:\Lensi\Download")
@@ -1029,15 +979,15 @@ class Lensi(object):
                 os.mkdir("D:\Lensi\APP_Portable")
             except:
                     pass
-            try:
-                os.mkdir(winshell.startup().replace("Startup","Lensi Apps"))
-            except:
-                    pass
+            # try:
+            #     os.mkdir(winshell.startup().replace("Startup","Lensi Apps"))
+            # except:
+            #         pass
             os.chdir("D:\Lensi")
             f = open("config.ini","w",encoding="utf-8")
             init_text = "[Lensi]\nqq_num = 1\n360_num = 1\nscoop_num = 1\nwinget_num = 1\nchoco_num = 1\nDAI(DeletedAfterInstalled) = True\nSO(SimplyOpen) = True\nES(EnableScoop) = F\nEC(EnableChoco) = F \nEW(EnableWinget) = F\nSIP(ScoopInstallPath) = D:\\Scoop"
             f.write(init_text)
-            f.close
+            f.close()
         else:
             Lensi_config = configparser.ConfigParser()
             os.chdir("D:\Lensi")
@@ -1046,15 +996,15 @@ class Lensi(object):
                 Lensi_config.set("Lensi","qq_num",le_set)
             elif options == "baoku_num":
                 Lensi_config.set("Lensi","360_num",le_set)
-            elif options == "DAI":
+            elif options == "DAI" or options == "DeletedAfterInstalled":
                 Lensi_config.set("Lensi", "DAI(DeletedAfterInstalled)",le_set)
-            elif options == "SO":
+            elif options == "SO" or options == "SimplyOpen":
                 Lensi_config.set("Lensi", "SO(SimplyOpen)",le_set)
-            elif options == "ES":
+            elif options == "ES" or options == "EnableScoop":
                 Lensi_config.set("Lensi", "ES(EnableScoop)",le_set)
-            elif options == "EC":
+            elif options == "EC" or options == "EnableChoco":
                 Lensi_config.set("Lensi", "EC(EnableChoco)",le_set)
-            elif options == "EW":
+            elif options == "EW" or options == "EnableWinget":
                 Lensi_config.set("Lensi", "EW(EnableWinget)",le_set)
             elif options == "choco_num":
                 Lensi_config.set("Lensi", "choco_num",le_set)

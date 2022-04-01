@@ -1262,7 +1262,6 @@ class Lensi(object):
         elif app_source == "S" or "scoop" or "s":
             Scoop_uninstall_app(app_name)
         elif app_source == "C" or "choco" or "c":
-            print("hhh")
             choco_uninstall_app(app_name)
         elif app_source == "W" or "winget" or "w":
             winget_uninstall_app(app_name)

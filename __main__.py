@@ -20,7 +20,7 @@ import csv
 import codecs
 import subprocess
 import win32api,win32con
-import ctypes, sys
+import ctypes
 
 def Scoop_info(app_name):
     os.system('scoop info '+ app_name)

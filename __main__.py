@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # -*- coding:utf-8 _*-
 import os
-from random import choice
 import shutil
 from urllib import request
 import requests

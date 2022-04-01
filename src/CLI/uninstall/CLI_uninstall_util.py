@@ -47,7 +47,7 @@ def uninstall_software(software_name):
         os.chdir("\\".join(uninstall_string.split('\\')[:-1]))
         cmd=uninstall_string.split('\\')[-1]
         print(cmd)
-        subprocess.Popen("",executable=cmd)
+        os.system(cmd)
 
 def is_admin():
     try:
@@ -56,15 +56,10 @@ def is_admin():
         return False
 
 def uninstall(app_name):
-    if is_admin():
-        softwares=get_software()
-        # print(softwares)
-        app_name_real = process.extractOne(app_name,softwares)[0]
-        print("Uninstalling",app_name_real)
-        uninstall_software(app_name_real)
-        pass
-    else:
-        if sys.version_info[0] == 3:
-            ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, __file__, None, 1)
+    softwares=get_software()
+    # print(softwares)
+    app_name_real = process.extractOne(app_name,softwares)[0]
+    print("Uninstalling",app_name_real)
+    uninstall_software(app_name_real)
 
 uninstall("steam")

@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding:utf-8 _*-
 import os
+from random import choice
 import shutil
 from urllib import request
 import requests
@@ -578,7 +579,7 @@ def install(file_name,app_name,SO):
             file_name_real = process.extractOne(file_name_exe,file_list)[0]
             os.chdir("D:\Lensi\APP_Portable\\" + app_name)
             file_list_real = os.listdir()
-            if file_list_real[0].find(".exe") == -1:
+            if file_list_real[0].find(".exe") != -1:
                 app_folder = app_name +"//" + file_list_real[0]
                 # create_shortcut_to_startmenu(app_folder,file_name_real)
                 create_shortcut_to_desktop(app_folder,file_name_real)
@@ -590,12 +591,15 @@ def install(file_name,app_name,SO):
             # print(cmd)
             os.system(cmd)
         elif file_name_kinds == "exe":
-            cmd = file_name + "/S /D=D:\Lensi\APP_Installed"
-            os.system(cmd)
+            exe_kind = "NSIS"
+            if exe_kind == "NSIS":
+                cmd = file_name + "/S /D=D:\Lensi\APP_Installed"
+                os.system(cmd)
         else:
             os.system(file_name)
     else:
         os.system(file_name)
+    add_installed_app(app_name,"web")
 
 def DownloadandInstallFile(download_url,app_source,DAI,app_name,SO):
     save_url = "D:\Lensi\Download"
@@ -720,7 +724,7 @@ def uninstall_software(software_name):
         print("Not found installed program.")
         return
     else:
-        print("uninstall "+ software_name)
+        print("Uninstall "+ software_name)
         uninstall_string = uninstall_string.replace('\\','\\\\')
         os.chdir("\\".join(uninstall_string.split('\\')[:-1]))
         cmd=uninstall_string.split('\\')[-1]
@@ -732,6 +736,21 @@ def is_admin():
         return ctypes.windll.shell32.IsUserAnAdmin()
     except:
         return False
+
+def add_installed_app(app_name,app_source):
+    os.chdir("D:\Lensi")
+    with open("app_list.txt","a") as f:
+        app_info = app_name + " "+app_source + "\n"
+        f.write(app_info)
+def get_app_installed():
+    app_result = subprocess.getoutput("WMIC product get name")
+    # print(app_result)
+    app_list_get = app_result.split("\n")
+    app_list = []
+    for i in app_list_get:
+        if i != '' and i != 'Name' and i != 'HOTKEY':
+            app_list.append(i[:i.find("  ")])
+    return app_list
 
 class Lensi(object):
     def __init__(self) -> None:
@@ -750,7 +769,7 @@ class Lensi(object):
             #     os.mkdir(start_menu)
             os.chdir("D:\Lensi")
             Lensi_config = configparser.ConfigParser()
-            global EW,qq_num,baoku_num,DAI,SO,ES,EC,EW,SIP,scoop_num,choco_num,winget_num,buckets_list_install
+            global EW,qq_num,baoku_num,DAI,SO,ES,EC,EW,SIP,scoop_num,choco_num,winget_num,buckets_list_install,NI
             Lensi_config.read("config.ini", encoding="utf-8")
             qq_num = Lensi_config.getint("Lensi","qq_num")
             scoop_num = Lensi_config.getint("Lensi", "scoop_num")
@@ -763,11 +782,12 @@ class Lensi(object):
             EC = Lensi_config.get("Lensi","EC(EnableChoco)")
             EW = Lensi_config.get("Lensi","EW(EnableWinget)")
             SIP = Lensi_config.get("Lensi","SIP(ScoopInstallPath)")
+            NI = Lensi_config.get("Lensi","NI(NormalInstall)")
         except:
             print("Initing the config.ini")
             os.chdir("D:\Lensi")
             f = open("config.ini","w",encoding="utf-8")
-            init_text = "[Lensi]\nqq_num = 1\n360_num = 1\nscoop_num = 1\nwinget_num = 1\nchoco_num = 1\nDAI(DeletedAfterInstalled) = True\nSO(SimplyOpen) = True\nES(EnableScoop) = F\nEC(EnableChoco) = F \nEW(EnableWinget) = F\nSIP(ScoopInstallPath) = D:\\Scoop"
+            init_text = "[Lensi]\nqq_num = 1\n360_num = 1\nscoop_num = 1\nwinget_num = 1\nchoco_num = 1\nDAI(DeletedAfterInstalled) = True\nSO(SimplyOpen) = True\nES(EnableScoop) = True\nEC(EnableChoco) = True \nEW(EnableWinget) = True\nSIP(ScoopInstallPath) = D:\\Scoop\nNI(NormalInstall)=Hippo"
             f.write(init_text)
             f.close()
             Lensi_config = configparser.ConfigParser()
@@ -785,6 +805,7 @@ class Lensi(object):
             EC = Lensi_config.get("Lensi","EC(EnableChoco)")
             EW = Lensi_config.get("Lensi","EW(EnableWinget)") 
             SIP = Lensi_config.get("Lensi","SIP(ScoopInstallPath)")
+            NI = Lensi_config.get("Lensi","NI(NormalInstall)")
             if Lensi_check_choco() == False:
                 print("Didn't install choco")
                 EC = "F"
@@ -875,20 +896,52 @@ class Lensi(object):
                 app_name = SIP +"\\buckets\\" + app_name[:app_name.find('\\')] + "\\bucket\\" + app_name[app_name.find('\\'):].strip("\\") + ".json"
                 Scoop_install_app(app_name)
         if app_source == "all":
-            try:
-                print("Downloading from Hippo")
-                search_result = hippo_search_easy(app_name)
+            if NI == "Hippo" or app_source == "h":
+                try:
+                    print("Downloading from Hippo")
+                    search_result = hippo_search_easy(app_name)
+                    download_url = search_result[0][5]
+                    app_name_real = search_result[0][0]
+                    # print(download_url)
+                    DownloadandInstallFile(download_url,"hippo",DAI,app_name_real,SO)
+                except:
+                    print("Hippo failed")
+                    print("Downloading from QQ")
+                    search_result =web_qq_search(app_name,1)
+                    download_url = search_result[0][5]
+                    app_name_real = search_result[0][0]
+                    DownloadandInstallFile(download_url,"qq",DAI,app_name_real,SO)
+            elif NI == "360" or NI == "b":
+                print("Downloading from 360")
+                search_result = web_360_search(app_name,1)
                 download_url = search_result[0][5]
                 app_name_real = search_result[0][0]
-                # print(download_url)
-                DownloadandInstallFile(download_url,"hippo",DAI,app_name_real,SO)
-            except:
-                print("Hippo failed")
+                DownloadandInstallFile(download_url,"360",DAI,app_name_real,SO)
+            elif NI == "qq" or NI == "q":
                 print("Downloading from QQ")
-                search_result =web_qq_search(app_name,1)
+                search_result = web_qq_search(app_name,1)
                 download_url = search_result[0][5]
                 app_name_real = search_result[0][0]
                 DownloadandInstallFile(download_url,"qq",DAI,app_name_real,SO)
+            elif ES == "True" and NI == "scoop" or NI == "s":
+                print("Installing from scoop")
+                if app_name.find("\\") != -1:
+                    app_name = SIP +"\\buckets\\" + app_name[:app_name.find('\\')] + "\\bucket\\" + app_name[app_name.find('\\'):].strip("\\") + ".json"
+                Scoop_install_app(app_name)
+                add_installed_app(app_name,"Scoop")
+            elif EC == "True" and NI == "choco" or NI == "c":
+                print("Installing from choco")
+                choco_install_app(app_name)
+                add_installed_app(app_name,"choco")
+            elif EW == "True" and NI == "winget" or NI == "w":
+                print("Installing from winget")
+                try:
+                    winget_id  = winget_search(app_name,1)[0][4]
+                except:
+                    print("None")
+                else:
+                    winget_install_app_id(winget_id)
+                    add_installed_app(app_name,"winget")
         elif app_source == "360" or app_source == "b":
             print("Downloading from 360")
             search_result = web_360_search(app_name,1)
@@ -913,9 +966,11 @@ class Lensi(object):
             if app_name.find("\\") != -1:
                 app_name = SIP +"\\buckets\\" + app_name[:app_name.find('\\')] + "\\bucket\\" + app_name[app_name.find('\\'):].strip("\\") + ".json"
             Scoop_install_app(app_name)
+            add_installed_app(app_name,"Scoop")
         elif EC == "True" and app_source == "choco" or app_source == "c":
             print("Installing from choco")
             choco_install_app(app_name)
+            add_installed_app(app_name,"choco")
         elif EW == "True" and app_source == "winget" or app_source == "w":
             print("Installing from winget")
             try:
@@ -924,21 +979,32 @@ class Lensi(object):
                 print("None")
             else:
                 winget_install_app_id(winget_id)
+                add_installed_app(app_name,"winget")
 
     def download(self,app_name,app_source="all"):
         if app_source == "all":
-            print("Downloading from QQ")
-            download_url = web_qq_search(app_name,1)[0][5]
-            DownloadFile(download_url,"qq")
-        elif app_source == "360" or app_source == "360" or app_source == "b":
+            if NI == "qq" or NI == "q":
+                print("Downloading from QQ")
+                download_url = web_qq_search(app_name,1)[0][5]
+                DownloadFile(download_url,"qq")
+            elif NI == "360" or NI == "b":
+                print("Downloading from 360")
+                download_url = web_360_search(app_name,1)[0][5]
+                DownloadFile(download_url,"360")
+            elif NI == "hippo" or NI == "h":
+                print("Downloading from Hippo")
+                download_url = hippo_search_easy(app_name)[0][5]
+                # print(download_url)
+                DownloadFile(download_url,"hippo")
+        elif app_source == "360" or app_source == "b":
             print("Downloading from 360")
             download_url = web_360_search(app_name,1)[0][5]
             DownloadFile(download_url,"360")
-        elif app_source == "qq" or app_source == "qq" or app_source == "q":
+        elif app_source == "qq" or app_source == "q":
             print("Downloading from QQ")
             download_url = web_qq_search(app_name,1)[0][5]
             DownloadFile(download_url,"qq")
-        elif app_source == "hippo" or app_source == "hippo" or app_source == "h":
+        elif app_source == "hippo" or app_source == "h":
             print("Downloading from Hippo")
             download_url = hippo_search_easy(app_name)[0][5]
             # print(download_url)
@@ -1085,7 +1151,7 @@ class Lensi(object):
         os.mkdir("D:\Lensi\Download")
         print("Has cleaned D:\Lensi\Download")
     
-    def set(self,options,le_set=0):
+    def set(self,options="help",le_set=0):
         le_set =str(le_set)
         if options == "init":
             try:
@@ -1110,7 +1176,7 @@ class Lensi(object):
             #         pass
             os.chdir("D:\Lensi")
             f = open("config.ini","w",encoding="utf-8")
-            init_text = "[Lensi]\nqq_num = 1\n360_num = 1\nscoop_num = 1\nwinget_num = 1\nchoco_num = 1\nDAI(DeletedAfterInstalled) = True\nSO(SimplyOpen) = True\nES(EnableScoop) = F\nEC(EnableChoco) = F \nEW(EnableWinget) = F\nSIP(ScoopInstallPath) = D:\\Scoop"
+            init_text = "[Lensi]\nqq_num = 1\n360_num = 1\nscoop_num = 1\nwinget_num = 1\nchoco_num = 1\nDAI(DeletedAfterInstalled) = True\nSO(SimplyOpen) = True\nES(EnableScoop) = True\nEC(EnableChoco) = True \nEW(EnableWinget) = True\nSIP(ScoopInstallPath) = D:\\Scoop\nNI(NormalInstall)=Hippo"
             f.write(init_text)
             f.close()
         else:
@@ -1121,15 +1187,15 @@ class Lensi(object):
                 Lensi_config.set("Lensi","qq_num",le_set)
             elif options == "baoku_num":
                 Lensi_config.set("Lensi","360_num",le_set)
-            elif options == "DAI" or options == "DeletedAfterInstalled":
+            elif options == "DAI" or options == "DeletedAfterInstalled" or options =="dai":
                 Lensi_config.set("Lensi", "DAI(DeletedAfterInstalled)",le_set)
-            elif options == "SO" or options == "SimplyOpen":
+            elif options == "SO" or options == "SimplyOpen" or options =="so":
                 Lensi_config.set("Lensi", "SO(SimplyOpen)",le_set)
-            elif options == "ES" or options == "EnableScoop":
+            elif options == "ES" or options == "EnableScoop" or options =="es":
                 Lensi_config.set("Lensi", "ES(EnableScoop)",le_set)
-            elif options == "EC" or options == "EnableChoco":
+            elif options == "EC" or options == "EnableChoco" or options =="ec":
                 Lensi_config.set("Lensi", "EC(EnableChoco)",le_set)
-            elif options == "EW" or options == "EnableWinget":
+            elif options == "EW" or options == "EnableWinget" or options == "ew":
                 Lensi_config.set("Lensi", "EW(EnableWinget)",le_set)
             elif options == "choco_num":
                 Lensi_config.set("Lensi", "choco_num",le_set)
@@ -1137,25 +1203,96 @@ class Lensi(object):
                 Lensi_config.set("Lensi", "winget_num",le_set)
             elif options == "scoop_num":
                 Lensi_config.set("Lensi", "scoop_num",le_set)
+            elif options == "NI" or options =="ni":
+                Lensi_config.set("Lensi", "NI(NormalInstall)",le_set)
             elif options == "help":
                 os.chdir("D:\Lensi")
                 f = open("config.ini","r")
                 print(f.read())
                 f.close()
+                print("The available source is : qq(q) 360(b) scoop(s) choco(c) winget(w)")
             else:
                 print("Sorry, Lensi didn't have this setting.")
             Lensi_config.write(open("config.ini", "w"))
 
     def uninstall(self,app_name):
         if is_admin():
+            print("Using util.")
             softwares=get_software()
             # print(softwares)
             app_name_real = process.extractOne(app_name,softwares)[0]
-            print("Uninstalling",app_name_real)
-            uninstall_software(app_name_real)
-            pass
+            print("Please check it carefully.")
+            out_put = "Uninstalling " + app_name_real + " (Y/N)"
+            result = input(out_put)
+            if result == "Y" or result == "y":
+                uninstall_software(app_name_real)
+            try:
+                portable_list = os.listdir("D:\Lensi\APP_Portable")
+                install_list =  os.listdir("D:\Lensi\APP_Installed")
+                app_name_chose_p = process.extractOne(app_name,portable_list)[0]
+                if fuzz.partial_ratio(app_name,app_name_chose_p) >= 90:
+                    app_path = "D:\Lensi\APP_Portable\\" + app_name_chose_p
+                    output = "Move " + app_path + "?(Y/N)"
+                    choice = input(output)
+                    if choice == "Y" or choice == "y":
+                        shutil.rmtree(app_path)
+                app_name_chose_i = process.extractOne(app_name,install_list)[0]
+                if fuzz.partial_ratio(app_name,app_name_chose_i) >= 90:
+                    app_path = "D:\Lensi\APP_Portable\\" + app_name_chose_i
+                    output = "Move " + app_path + "?(Y/N)"
+                    choice = input(output)
+                    if choice == "Y" or choice == "y":
+                        shutil.rmtree(app_path)
+            except:
+                pass
         else:
-            print("Please run in admin to uninstall app.")
+            print("Using WMIC")
+            print("Please run in admin to use util")
+            softwares=get_app_installed()
+            app_name_real = process.extractOne(app_name,softwares)[0]
+            print("Please check it carefully.")
+            output = "Uninstalling " + app_name_real + " (Y/N)"
+            result = input(output)
+            if result == "Y" or result == "y":
+                os.system('WMIC product where name="' +app_name_real + '" call uninstall')
+            try:
+                portable_list = os.listdir("D:\Lensi\APP_Portable")
+                install_list =  os.listdir("D:\Lensi\APP_Installed")
+                app_name_chose_p = process.extractOne(app_name,portable_list)[0]
+                if fuzz.partial_ratio(app_name,app_name_chose_p) >= 90:
+                    app_path = "D:\Lensi\APP_Portable\\" + app_name_chose_p
+                    output = "Move ",app_path,"?(Y/N)"
+                    choice = input(output)
+                    if choice == "Y" or choice == "y":
+                        shutil.rmtree(app_path)
+                app_name_chose_i = process.extractOne(app_name,install_list)[0]
+                if fuzz.partial_ratio(app_name,app_name_chose_i) >= 90:
+                    app_path = "D:\Lensi\APP_Portable\\" + app_name_chose_i
+                    output = "Move ",app_path,"?(Y/N)"
+                    choice = input(output)
+                    if choice == "Y" or choice == "y":
+                        shutil.rmtree(app_path)
+            except:
+                pass
+    def list(self):
+        os.chdir("D:\Lensi")
+        f = open("app_list.txt","r")
+        print(f.read())
+        f.close()
+        print("In D:\Lensi\APP_Portable")
+        print(os.listdir("D:\Lensi\APP_Portable"))
+        print("In D:\Lensi\APP_Installed")
+        print(os.listdir("D:\Lensi\APP_Installed"))
+    
+    def init(self):
+        choice = input("Do you really want to clean everything?(Y/N)")
+        if choice == "y" or choice =="Y":
+            try:
+                shutil.rmtree("D:\Lensi")
+            except:
+                pass
+            print("Has cleaned D:\Lensi")
+
 
 def main():
     fire.Fire(Lensi)

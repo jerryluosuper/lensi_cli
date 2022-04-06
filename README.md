@@ -5,6 +5,7 @@
 
 + Lensi安装`pip install lensi`
 + Lensi CLI为360 qq scoop choco winget hippo的聚合命令行工具。
++ PS. 本人即将面临中考，暂时没有长期维护打算
 
 + 主要命令
 

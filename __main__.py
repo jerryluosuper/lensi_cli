@@ -2,6 +2,7 @@
 # -*- coding:utf-8 _*-
 import os
 import shutil
+import time
 from urllib import request
 import requests
 from urllib.request import urlopen
@@ -20,7 +21,6 @@ import csv
 import codecs
 import subprocess
 import win32api,win32con
-import ctypes
 
 def Scoop_info(app_name):
     os.system('scoop info '+ app_name)
@@ -31,10 +31,6 @@ def Scoop_info_lensi(app_name_install,SIP):
     with open(app_name_json, 'r') as f:
         app_json = json.load(f)
     app_detail = [app_json["shortcuts"][0][1],app_json["version"],app_json["description"],app_json["homepage"]]
-    # app_name_detail = app_json["shortcuts"][0][1]
-    # app_version = app_json["version"]
-    # app_description = app_json["description"]
-    # app_homepage = app_json["homepage"]
     return app_detail
 
 def winget_info_id(app_id):
@@ -772,25 +768,26 @@ class Lensi(object):
             #     os.mkdir(start_menu)
             os.chdir("D:\Lensi")
             Lensi_config = configparser.ConfigParser()
-            global EW,qq_num,baoku_num,DAI,SO,ES,EC,EW,SIP,scoop_num,choco_num,winget_num,buckets_list_install,NI
+            global EW,qq_num,baoku_num,DAI,SO,ES,EC,EW,SIP,WT,scoop_num,choco_num,winget_num,buckets_list_install,NI,init_text
+            init_text = "[Lensi]\nqq_num = 1\n360_num = 1\nscoop_num = 1\nwinget_num = 1\nchoco_num = 1\nDAI(DeletedAfterInstalled) = True\nSO(SimplyOpen) = True\nES(EnableScoop) = True\nEC(EnableChoco) = True \nEW(EnableWinget) = True\nSIP(ScoopInstallPath) = D:\\Scoop\nNI(NormalInstall)=Hippo\nWT(WaiteTime)=3"
             Lensi_config.read("config.ini", encoding="utf-8")
-            qq_num = Lensi_config.getint("Lensi","qq_num")
+            qq_num = Lensi_config.getint("Lensi", "qq_num")
+            baoku_num = Lensi_config.getint("Lensi", "360_num")
             scoop_num = Lensi_config.getint("Lensi", "scoop_num")
             choco_num = Lensi_config.getint("Lensi", "choco_num")
             winget_num = Lensi_config.getint("Lensi", "winget_num")
-            baoku_num = Lensi_config.getint("Lensi","360_num")
             DAI = Lensi_config.get("Lensi","DAI(DeletedAfterInstalled)")
             SO = Lensi_config.get("Lensi","SO(SimplyOpen)")
             ES = Lensi_config.get("Lensi","ES(EnableScoop)")
             EC = Lensi_config.get("Lensi","EC(EnableChoco)")
-            EW = Lensi_config.get("Lensi","EW(EnableWinget)")
+            EW = Lensi_config.get("Lensi","EW(EnableWinget)") 
             SIP = Lensi_config.get("Lensi","SIP(ScoopInstallPath)")
             NI = Lensi_config.get("Lensi","NI(NormalInstall)")
+            WT = Lensi_config.get("Lensi","WT(WaiteTime)")
         except:
             print("Initing the config.ini")
             os.chdir("D:\Lensi")
             f = open("config.ini","w",encoding="utf-8")
-            init_text = "[Lensi]\nqq_num = 1\n360_num = 1\nscoop_num = 1\nwinget_num = 1\nchoco_num = 1\nDAI(DeletedAfterInstalled) = True\nSO(SimplyOpen) = True\nES(EnableScoop) = True\nEC(EnableChoco) = True \nEW(EnableWinget) = True\nSIP(ScoopInstallPath) = D:\\Scoop\nNI(NormalInstall)=Hippo"
             f.write(init_text)
             f.close()
             Lensi_config = configparser.ConfigParser()
@@ -809,6 +806,7 @@ class Lensi(object):
             EW = Lensi_config.get("Lensi","EW(EnableWinget)") 
             SIP = Lensi_config.get("Lensi","SIP(ScoopInstallPath)")
             NI = Lensi_config.get("Lensi","NI(NormalInstall)")
+            WT = Lensi_config.getint("Lensi","WT(WaiteTime)")
             if Lensi_check_choco() == False:
                 print("Didn't install choco")
                 EC = "F"
@@ -1003,7 +1001,7 @@ class Lensi(object):
                 download_url = hippo_search_easy(app_name)[0][5]
                 # print(download_url)
                 DownloadFile(download_url,"hippo")
-            elif NI == "scoop" or "scoop" or "winget" or "s" or "w" or "c":
+            elif NI == "scoop" or NI == "scoop" or NI == "winget" or NI == "s" or NI == "w" or NI == "c":
                 print("How to download things from scoop or choco or winget?")
                 print("Use install!")
             else:
@@ -1029,7 +1027,7 @@ class Lensi(object):
         app_source = str(app_source)
         limmit_num = int(limmit_num)
         if app_source == "all" and limmit_num == 0:
-            if app_name == "Lensi" or "lensi":
+            if app_name == "Lensi" or app_name == "lensi":
                 print("? You have installed it ,haven't you ?")
                 return 
             if app_name == "Lensit":
@@ -1054,21 +1052,7 @@ class Lensi(object):
                 thread_W = myThread_search( "Winget", app_name,winget_num)
                 thread_W.start()
             #等待进程
-            try:
-                thread_S.join()
-            except:
-                pass
-            try:
-                thread_C.join()
-            except:
-                pass
-            try:
-                thread_W.join()
-            except:
-                pass
-            thread_360.join()
-            thread_qq.join()
-            thread_H.join()
+            time.sleep(WT)
             # print ("退出主线程")
             #判断结果是否为空
             if thread_360.get_result() != None :
@@ -1190,16 +1174,15 @@ class Lensi(object):
             #         pass
             os.chdir("D:\Lensi")
             f = open("config.ini","w",encoding="utf-8")
-            init_text = "[Lensi]\nqq_num = 1\n360_num = 1\nscoop_num = 1\nwinget_num = 1\nchoco_num = 1\nDAI(DeletedAfterInstalled) = True\nSO(SimplyOpen) = True\nES(EnableScoop) = True\nEC(EnableChoco) = True \nEW(EnableWinget) = True\nSIP(ScoopInstallPath) = D:\\Scoop\nNI(NormalInstall)=Hippo"
             f.write(init_text)
             f.close()
         else:
             Lensi_config = configparser.ConfigParser()
             os.chdir("D:\Lensi")
             Lensi_config.read("config.ini", encoding="utf-8")
-            if options == "qq_num" or "qq" or "q":
+            if options == "qq_num" or options =="qq" or options =="q":
                 Lensi_config.set("Lensi","qq_num",le_set)
-            elif options == "baoku_num" or "360_num" or "b":
+            elif options == "baoku_num" or options =="360_num" or options =="b":
                 Lensi_config.set("Lensi","360_num",le_set)
             elif options == "DAI" or options == "DeletedAfterInstalled" or options =="dai":
                 Lensi_config.set("Lensi", "DAI(DeletedAfterInstalled)",le_set)
@@ -1211,14 +1194,16 @@ class Lensi(object):
                 Lensi_config.set("Lensi", "EC(EnableChoco)",le_set)
             elif options == "EW" or options == "EnableWinget" or options == "ew":
                 Lensi_config.set("Lensi", "EW(EnableWinget)",le_set)
-            elif options == "choco_num" or "c" or "choco":
+            elif options == "choco_num" or options =="c" or options =="choco":
                 Lensi_config.set("Lensi", "choco_num",le_set)
-            elif options == "winget_num" or "w" or "winget":
+            elif options == "winget_num" or options =="w" or options =="winget":
                 Lensi_config.set("Lensi", "winget_num",le_set)
-            elif options == "scoop_num" or "s" or "scoop":
+            elif options == "scoop_num" or options =="s" or options =="scoop":
                 Lensi_config.set("Lensi", "scoop_num",le_set)
             elif options == "NI" or options =="ni":
                 Lensi_config.set("Lensi", "NI(NormalInstall)",le_set)
+            elif options == "WT" or options =="wt":
+                Lensi_config.set("Lensi", "WT(WaiteTime)",le_set)
             elif options == "help":
                 os.chdir("D:\Lensi")
                 f = open("config.ini","r")

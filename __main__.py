@@ -212,7 +212,12 @@ def winget_search(app_name,limmit_num):#winget 搜索解析
         for i in search_result_list:
             search_result.append(i.split())#以空行分隔
         for j in search_result:
-            name = "".join(j[:len(j)-3]) #因为id version source 是连续的 不带空格的，所以确定这三个把前面的连起来
+            app_name = j[:len(j)-3]
+            name = ""
+            # print(app_name)
+            for k in app_name:
+                name = name + k +" " #因为id version source 是连续的 不带空格的，所以确定这三个把前面的连起来
+            name = name.strip(" ")
             del(j[:len(j)-3])
             j.insert(0,name)
             # print(name)
@@ -570,7 +575,7 @@ def create_shortcut_to_startmenu(app_folder,file_name):
     Path = os.path.join(winshell.startup().strip("\Startup"),"Lensi Apps",fname + '.lnk')
     winshell.CreateShortcut(Path,Target = target,Icon=(target, 0),Description=title) 
 
-def install(file_name,app_name,SO):
+def install(file_name,app_name,SO,app_source,app_version):
     os.chdir("D:\Lensi\Download")
     file_name_kinds = file_name[file_name.rfind("."):].strip(".")
     if SO != "True":
@@ -603,9 +608,9 @@ def install(file_name,app_name,SO):
             os.system(file_name)
     else:
         os.system(file_name)
-    add_installed_app(app_name,"web")
+    add_installed_app(app_name,app_source,app_version)
 
-def DownloadandInstallFile(download_url,app_source,DAI,app_name,SO):
+def DownloadandInstallFile(download_url,app_source,DAI,app_name,SO,app_version):
     save_url = "D:\Lensi\Download"
     if app_source == "qq" or app_source == "360":
         file_name = download_url[download_url.rfind("/"):]
@@ -627,7 +632,7 @@ def DownloadandInstallFile(download_url,app_source,DAI,app_name,SO):
             fd.write(chunk)
         print(file_name+' 下载完成！')
     os.chdir("D:\Lensi\Download")
-    install(file_name,app_name,SO)
+    install(file_name,app_name,SO,app_source,app_version)
     # os.system(file_name)
     os.chdir("D:\Lensi\Download")
     if DAI == "True":
@@ -735,10 +740,10 @@ def uninstall_software(software_name):
         print(cmd)
         os.system(cmd)
 
-def add_installed_app(app_name,app_source):
+def add_installed_app(app_name,app_source,app_version=" "):
     os.chdir("D:\Lensi")
     with open("app_list.txt","a") as f:
-        app_info = app_name + " "+app_source + "\n"
+        app_info = app_name + " "+app_version +" " + app_source + "\n"
         f.write(app_info)
 
 def get_app_installed():
@@ -750,6 +755,26 @@ def get_app_installed():
         if i != '' and i != 'Name' and i != 'HOTKEY':
             app_list.append(i[:i.find("  ")])
     return app_list
+
+def load_list_app_installed():
+    os.chdir("D:\Lensi")
+    f = open("app_list.txt","r")
+    app_list = f.readlines()
+    f.close()
+    app_list_real = []
+    for i in app_list:
+        if i.find("scoop") == -1 and i.find("choco") == -1 and i.find("winget") == -1:
+            j=i.split()
+            app_name = j[:len(j)-2]
+            name = ""
+            for k in app_name:
+                name = name + k +" "
+            name = name.strip(" ")
+            del(j[:len(j)-2])
+            j.insert(0,name)
+            j[len(j)-1] = j[len(j)-1].replace("\n","")
+            app_list_real.append(j)
+    return app_list_real
 
 class Lensi(object):
     def __init__(self) -> None:
@@ -903,27 +928,31 @@ class Lensi(object):
                     search_result = hippo_search_easy(app_name)
                     download_url = search_result[0][5]
                     app_name_real = search_result[0][0]
+                    app_version = search_result[0][1]
                     # print(download_url)
-                    DownloadandInstallFile(download_url,"hippo",DAI,app_name_real,SO)
+                    DownloadandInstallFile(download_url,"hippo",DAI,app_name_real,SO,app_version)
                 except:
                     print("Hippo failed")
                     print("Downloading from QQ")
                     search_result =web_qq_search(app_name,1)
                     download_url = search_result[0][5]
                     app_name_real = search_result[0][0]
-                    DownloadandInstallFile(download_url,"qq",DAI,app_name_real,SO)
+                    app_version = search_result[0][1]
+                    DownloadandInstallFile(download_url,"qq",DAI,app_name_real,SO,app_version)
             elif NI == "360" or NI == "b":
                 print("Downloading from 360")
                 search_result = web_360_search(app_name,1)
                 download_url = search_result[0][5]
                 app_name_real = search_result[0][0]
-                DownloadandInstallFile(download_url,"360",DAI,app_name_real,SO)
+                app_version = search_result[0][1]
+                DownloadandInstallFile(download_url,"360",DAI,app_name_real,SO,app_version)
             elif NI == "qq" or NI == "q":
                 print("Downloading from QQ")
                 search_result = web_qq_search(app_name,1)
                 download_url = search_result[0][5]
                 app_name_real = search_result[0][0]
-                DownloadandInstallFile(download_url,"qq",DAI,app_name_real,SO)
+                app_version = search_result[0][1]
+                DownloadandInstallFile(download_url,"qq",DAI,app_name_real,SO,app_version)
             elif ES == "True" and NI == "scoop" or NI == "s":
                 print("Installing from scoop")
                 if app_name.find("\\") != -1:
@@ -950,20 +979,23 @@ class Lensi(object):
             search_result = web_360_search(app_name,1)
             download_url = search_result[0][5]
             app_name_real = search_result[0][0]
-            DownloadandInstallFile(download_url,"360",DAI,app_name_real,SO)
+            app_version = search_result[0][1]
+            DownloadandInstallFile(download_url,"360",DAI,app_name_real,SO,app_version)
         elif app_source == "qq" or app_source == "q":
             print("Downloading from QQ")
             search_result = web_qq_search(app_name,1)
             download_url = search_result[0][5]
             app_name_real = search_result[0][0]
-            DownloadandInstallFile(download_url,"qq",DAI,app_name_real,SO)
+            app_version = search_result[0][1]
+            DownloadandInstallFile(download_url,"qq",DAI,app_name_real,SO,app_version)
         elif app_source == "hippo" or app_source == "h":
             print("Downloading from Hippo")
             search_result = hippo_search_easy(app_name)
             download_url = search_result[0][5]
             app_name_real = search_result[0][0]
+            app_version = search_result[0][1]
             # print(download_url)
-            DownloadandInstallFile(download_url,"hippo",DAI,app_name_real,SO)
+            DownloadandInstallFile(download_url,"hippo",DAI,app_name_real,SO,app_version)
         elif ES == "True" and app_source == "scoop" or app_source == "s":
             print("Installing from scoop")
             if app_name.find("\\") != -1:
@@ -1144,6 +1176,25 @@ class Lensi(object):
         else:
             print("Sorry. Lensi doesn't support this source now. /(ㄒoㄒ)/~~")
 
+    def upgrade(self,app_name="all"):
+        app_installed = load_list_app_installed()
+        app_installed_name = []
+        for i in app_installed:
+            app_installed_name.append(i[0])
+        app_name_real = process.extractOne(app_name,app_installed_name)[0]
+        real_app_update = 0
+        for i in app_installed:
+            if i[0] == app_name_real:
+                real_app_update = i 
+                break
+        search_list = lensi_search_all(real_app_update[2],app_name,1,SIP)
+        if search_list != None:
+            if fuzz.partial_ratio(search_list[0][0],real_app_update[0]) >= 90:
+                if search_list[0][1] != real_app_update[1]:
+                    DownloadandInstallFile(search_list[0][5],search_list[0][8],DAI,search_list[0][0],SO,search_list[0][1])
+                else:
+                    print("It is the latest version! ")
+
     def clean(self):
         shutil.rmtree("D:\Lensi\Download")
         os.mkdir("D:\Lensi\Download")
@@ -1215,6 +1266,9 @@ class Lensi(object):
             Lensi_config.write(open("config.ini", "w"))
 
     def uninstall(self,app_name,app_source="web"):
+        if app_name == "lensi" or app_name == "Lensi":
+            shutil.rmtree("D:\Lensi")
+            os.system("pip uninstall lensi")
         if app_source == "web":
             print("Using util.")
             softwares=get_software()

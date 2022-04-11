@@ -1,7 +1,6 @@
+import shutil
 import win32api,win32con
 import os
-import subprocess
-import ctypes, sys
 from fuzzywuzzy import process
 def get_all_installed_software():
     reg_root = win32con.HKEY_LOCAL_MACHINE
@@ -48,13 +47,12 @@ def uninstall_software(software_name):
         cmd=uninstall_string.split('\\')[-1]
         print(cmd)
         os.system(cmd)
-
-def is_admin():
-    try:
-        return ctypes.windll.shell32.IsUserAnAdmin()
-    except:
-        return False
-
+        choice = input("Do you want to clean the folder(Y/N):")
+        if choice == "Y" or choice == "y":
+            try:
+                shutil.rmtree("\\".join(uninstall_string.split('\\')[:-1]))
+            except:
+                pass
 def uninstall(app_name):
     softwares=get_software()
     # print(softwares)

@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # -*- coding:utf-8 _*-
+from glob import glob
 import os
 import shutil
 import time
@@ -367,6 +368,20 @@ class myThread_search (threading.Thread):
             return self.result  
         except Exception:  
             return None  
+    def globaltrace(self, frame, event, arg): 
+        if event == 'call': 
+            return self.localtrace 
+        else: 
+            return None
+
+    def localtrace(self, frame, event, arg): 
+        if self.killed: 
+            if event == 'line': 
+                raise SystemExit() 
+        return self.localtrace 
+
+    def kill(self): 
+        self.killed = True
 
 def web_360_search(app_name,limmit_num):
     headers = {'User-Agent':' Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/64.0.3282.140 Safari/537.36 Edge/18.17763'}
@@ -505,11 +520,11 @@ def hippo_search_easy(app_name):
                     hippo_download_url = item2.get('data-qa-download-url')
             # print (hippo_download_url)
         except:
-            hippo_search_result_list = [hippo_information_name,hippo_version,hippo_information,hippo_information_html_url,app_name,None,hippo_icon_url,fuzz.partial_ratio(app_name,hippo_information_name),"hippo"]
+            hippo_search_result_list = [app_name,hippo_version,hippo_information,hippo_information_html_url,app_name,None,hippo_icon_url,fuzz.partial_ratio(app_name,hippo_information_name),"hippo"]
             hippo_search_result.append(hippo_search_result_list)
             return hippo_search_result
         else:
-            hippo_search_result_list = [hippo_information_name,hippo_version,hippo_information,hippo_information_html_url,app_name,hippo_download_url,hippo_icon_url,fuzz.partial_ratio(app_name,hippo_information_name),"hippo"]
+            hippo_search_result_list = [app_name,hippo_version,hippo_information,hippo_information_html_url,app_name,hippo_download_url,hippo_icon_url,fuzz.partial_ratio(app_name,hippo_information_name),"hippo"]
             hippo_search_result.append(hippo_search_result_list)
             # pprint_easy(hippo_search_result)
             return hippo_search_result
@@ -576,17 +591,17 @@ def create_shortcut_to_startmenu(app_folder,file_name):
     winshell.CreateShortcut(Path,Target = target,Icon=(target, 0),Description=title) 
 
 def install(file_name,app_name,SO,app_source,app_version):
-    os.chdir("D:\Lensi\Download")
+    os.chdir(lensi_path + "\Download")
     file_name_kinds = file_name[file_name.rfind("."):].strip(".")
     if SO != "True":
         if file_name_kinds == "zip":
             zip_file = zipfile.ZipFile(file_name)
-            zip_file.extractall("D:\Lensi\APP_Portable\\" + app_name + "\\")
+            zip_file.extractall(lensi_path + "\APP_Portable\\" + app_name + "\\")
             file_list = zip_file.namelist()
             zip_file.close()
             file_name_exe = app_name + ".exe"
             file_name_real = process.extractOne(file_name_exe,file_list)[0]
-            os.chdir("D:\Lensi\APP_Portable\\" + app_name)
+            os.chdir(lensi_path + "\APP_Portable\\" + app_name)
             file_list_real = os.listdir()
             if file_list_real[0].find(".exe") != -1:
                 app_folder = app_name +"//" + file_list_real[0]
@@ -596,13 +611,18 @@ def install(file_name,app_name,SO,app_source,app_version):
                 # create_shortcut_to_startmenu(app_name,file_name_real)
                 create_shortcut_to_desktop(app_name,file_name_real)
         elif file_name_kinds == "msi":
-            cmd = "msiexec /i " + "D:\Lensi\Download\\" + file_name + " /norestart  /passive"
+            cmd = "msiexec /i " + lensi_path + "\Download\\" + file_name + " /norestart  /passive"
             # print(cmd)
             os.system(cmd)
         elif file_name_kinds == "exe":
+            folder_path = "D:\Lensi\APP_Installed\\" + app_name
+            try:
+                os.mkdir(folder_path)
+            except:
+                pass
             exe_kind = "NSIS"
             if exe_kind == "NSIS":
-                cmd = file_name + "/S /D=D:\Lensi\APP_Installed"
+                cmd = file_name + "/S /D=" + folder_path
                 os.system(cmd)
         else:
             os.system(file_name)
@@ -611,7 +631,7 @@ def install(file_name,app_name,SO,app_source,app_version):
     add_installed_app(app_name,app_source,app_version)
 
 def DownloadandInstallFile(download_url,app_source,DAI,app_name,SO,app_version):
-    save_url = "D:\Lensi\Download"
+    save_url = lensi_path + "\Download"
     if app_source == "qq" or app_source == "360":
         file_name = download_url[download_url.rfind("/"):]
         file_name = file_name.strip("/")
@@ -631,10 +651,10 @@ def DownloadandInstallFile(download_url,app_source,DAI,app_name,SO,app_version):
         for chunk in tqdm(iterable=res.iter_content(1024),total=total_size,unit='k',desc=None):
             fd.write(chunk)
         print(file_name+' 下载完成！')
-    os.chdir("D:\Lensi\Download")
+    os.chdir(lensi_path + "\Download")
     install(file_name,app_name,SO,app_source,app_version)
     # os.system(file_name)
-    os.chdir("D:\Lensi\Download")
+    os.chdir(lensi_path + "\Download")
     if DAI == "True":
         os.remove(file_name)
 
@@ -652,7 +672,7 @@ def Lensi_check_choco():
         return True
 
 def DownloadFile(download_url,app_source):
-    save_url = "D:\Lensi\Download"
+    save_url = lensi_path + "\Download"
     if app_source == "qq" or app_source == "360":
         file_name = download_url[download_url.rfind("/"):]
         file_name = file_name.strip("/")
@@ -692,8 +712,8 @@ def pprint_easy(i,SIP="D:\Scoop"):
     else:
         Downloadfrom = i[5]
     print("Downloading from:",Downloadfrom)
-    if i[8] == "qq" or i[8] == "360" or i[8] == "hippo":
-        print("Installing from: lensi install ",i[0])
+    if i[8] == "hippo":
+        print("Installing from: lensi install",i[0])
     print("-------------------")
 
 def get_all_installed_software():
@@ -735,15 +755,21 @@ def uninstall_software(software_name):
         print("Not found installed program.")
         return
     else:
-        print("Uninstall "+ software_name)
+        print("uninstall "+ software_name)
         uninstall_string = uninstall_string.replace('\\','\\\\')
         os.chdir("\\".join(uninstall_string.split('\\')[:-1]))
         cmd=uninstall_string.split('\\')[-1]
         print(cmd)
         os.system(cmd)
+        choice = input("Do you want to clean the folder(Y/N):")
+        if choice == "Y" or choice == "y":
+            try:
+                shutil.rmtree("\\".join(uninstall_string.split('\\')[:-1]))
+            except:
+                pass
 
 def add_installed_app(app_name,app_source,app_version=" "):
-    os.chdir("D:\Lensi")
+    os.chdir(lensi_path)
     f = open("app_list.txt","r")
     app_list = f.readlines()
     f.close()
@@ -795,7 +821,7 @@ def get_app_installed():
     return app_list
 
 def load_list_app_installed():
-    os.chdir("D:\Lensi")
+    os.chdir(lensi_path)
     f = open("app_list.txt","r")
     app_list = f.readlines()
     f.close()
@@ -817,25 +843,29 @@ def load_list_app_installed():
 class Lensi(object):
     def __init__(self) -> None:
         try:
-            if os.path.exists("D:\Lensi") == False:
-                os.mkdir("D:\Lensi")
-            if os.path.exists("D:\Lensi\Download") == False:
-                os.mkdir("D:\Lensi\Download")
-                os.chdir("D:\Lensi")
+            global lensi_path
+            lensi_path = "D:\Lensi"
+            if os.path.exists("D:\\") == False:
+                lensi_path = "C:\Lensi"
+            if os.path.exists(lensi_path) == False:
+                os.mkdir(lensi_path)
+            if os.path.exists(lensi_path + "\Download") == False:
+                os.mkdir(lensi_path + "\Download")
+                os.chdir(lensi_path)
                 with open("app_list.txt","w+") as f:
                     f.write("Lensi 0.1.2 pip")
-            if os.path.exists("D:\Lensi\APP_Portable") == False:
-                os.mkdir("D:\Lensi\APP_Portable")
-            if os.path.exists("D:\Lensi\APP_Installed") == False:
-                os.mkdir("D:\Lensi\APP_Installed")
+            if os.path.exists(lensi_path + "\APP_Portable") == False:
+                os.mkdir(lensi_path + "\APP_Portable")
+            if os.path.exists(lensi_path + "\APP_Installed") == False:
+                os.mkdir(lensi_path + "\APP_Installed")
             # start_menu = winshell.startup().replace("Startup","Lensi Apps")
             # # print(start_menu)
             # if os.path.exists(start_menu) == False:
             #     os.mkdir(start_menu)
-            os.chdir("D:\Lensi")
+            os.chdir(lensi_path)
             Lensi_config = configparser.ConfigParser()
             global EW,qq_num,baoku_num,DAI,SO,ES,EC,EW,SIP,WT,scoop_num,choco_num,winget_num,buckets_list_install,NI,init_text
-            init_text = "[Lensi]\nqq_num = 1\n360_num = 1\nscoop_num = 1\nwinget_num = 1\nchoco_num = 1\nDAI(DeletedAfterInstalled) = True\nSO(SimplyOpen) = True\nES(EnableScoop) = True\nEC(EnableChoco) = True \nEW(EnableWinget) = True\nSIP(ScoopInstallPath) = D:\\Scoop\nNI(NormalInstall)=qq\nWT(WaiteTime)=3"
+            init_text = "[Lensi]\nqq_num = 1\n360_num = 1\nscoop_num = 1\nwinget_num = 1\nchoco_num = 1\nDAI(DeletedAfterInstalled) = True\nSO(SimplyOpen) = True\nES(EnableScoop) = True\nEC(EnableChoco) = True \nEW(EnableWinget) = True\nSIP(ScoopInstallPath) = D:\\Scoop\nNI(NormalInstall)=qq\nWT(WaitTime)=3"
             Lensi_config.read("config.ini", encoding="utf-8")
             qq_num = Lensi_config.getint("Lensi", "qq_num")
             baoku_num = Lensi_config.getint("Lensi", "360_num")
@@ -849,15 +879,15 @@ class Lensi(object):
             EW = Lensi_config.get("Lensi","EW(EnableWinget)") 
             SIP = Lensi_config.get("Lensi","SIP(ScoopInstallPath)")
             NI = Lensi_config.get("Lensi","NI(NormalInstall)")
-            WT = Lensi_config.get("Lensi","WT(WaiteTime)")
+            WT = Lensi_config.get("Lensi","WT(WaitTime)")
         except:
             print("Initing the config.ini")
-            os.chdir("D:\Lensi")
+            os.chdir(lensi_path)
             f = open("config.ini","w",encoding="utf-8")
             f.write(init_text)
             f.close()
             Lensi_config = configparser.ConfigParser()
-            os.chdir("D:\Lensi")
+            os.chdir(lensi_path)
             Lensi_config.read("config.ini", encoding="utf-8")
         finally:
             qq_num = Lensi_config.getint("Lensi", "qq_num")
@@ -872,7 +902,7 @@ class Lensi(object):
             EW = Lensi_config.get("Lensi","EW(EnableWinget)") 
             SIP = Lensi_config.get("Lensi","SIP(ScoopInstallPath)")
             NI = Lensi_config.get("Lensi","NI(NormalInstall)")
-            WT = Lensi_config.getint("Lensi","WT(WaiteTime)")
+            WT = Lensi_config.getint("Lensi","WT(WaitTime)")
             if Lensi_check_choco() == False:
                 print("Didn't install choco")
                 EC = "F"
@@ -1112,20 +1142,47 @@ class Lensi(object):
             #多线程
             search_result = []
             # 开启新线程
+            thread_360.setDaemon(True)
+            thread_qq.setDaemon(True)
+            thread_H.setDaemon(True)
             thread_360.start()
             thread_qq.start()
             thread_H.start()
+            if WT>0:
+                thread_360.join(timeout=WT)
+                thread_qq.join(timeout=WT)
+                thread_H.join(timeout=WT)
+            else:
+                thread_360.join()
+                thread_qq.join()
+                thread_H.join()
+
             if ES == "True":
                 thread_S = myThread_search( "Scoop", app_name,scoop_num,SIP)
+                thread_S.setDaemon(True)
                 thread_S.start()
+                if WT>0:
+                    thread_S.join(timeout=WT)
+                else:
+                    thread_S.join()
             if EC == "True":
                 thread_C = myThread_search( "Choco", app_name,choco_num)
+                thread_C.setDaemon(True)
                 thread_C.start()
+                if WT>0:
+                    thread_C.join(timeout=WT)
+                else:
+                    thread_C.join()
+
             if EW == "True":
                 thread_W = myThread_search( "Winget", app_name,winget_num)
+                thread_W.setDaemon(True)
                 thread_W.start()
+                if WT>0:
+                    thread_W.join(timeout=WT)
+                else:
+                    thread_W.join()   
             #等待进程
-            time.sleep(WT)
             # print ("退出主线程")
             #判断结果是否为空
             if thread_360.get_result() != None :
@@ -1185,12 +1242,12 @@ class Lensi(object):
             if limmit_num == 0:
                 search_result = Scoop_search_lensi(app_name,buckets_list_install,scoop_num,SIP)
                 for i in search_result:
-                    pprint_easy(i)
+                    pprint_easy(i,SIP)
                 print("That's all! o(*￣▽￣*)ブ")
             else:
                 search_result = Scoop_search_lensi(app_name,buckets_list_install,limmit_num,SIP)
                 for i in search_result:
-                    pprint_easy(i)
+                    pprint_easy(i,SIP)
                 print("That's all! o(*￣▽￣*)ブ")
         elif app_source == "choco" or  app_source == "c":
             if limmit_num == 0:
@@ -1253,40 +1310,40 @@ class Lensi(object):
                 print("Use lensi install",app_name,"to install")
 
     def clean(self):
-        shutil.rmtree("D:\Lensi\Download")
-        os.mkdir("D:\Lensi\Download")
+        shutil.rmtree(lensi_path + "\Download")
+        os.mkdir(lensi_path + "\Download")
         print("Has cleaned D:\Lensi\Download")
     
     def set(self,options="help",le_set=0):
         le_set =str(le_set)
         if options == "init":
             try:
-                os.mkdir("D:\Lensi")
+                os.mkdir(lensi_path)
             except:
                 pass
             try:
-                os.mkdir("D:\Lensi\Download")
+                os.mkdir(lensi_path + "\Download")
             except:
                     pass
             try:
-                os.mkdir("D:\Lensi\APP_Installed")
+                os.mkdir(lensi_path + "\APP_Installed")
             except:
                     pass
             try:
-                os.mkdir("D:\Lensi\APP_Portable")
+                os.mkdir(lensi_path + "\APP_Portable")
             except:
                     pass
             # try:
             #     os.mkdir(winshell.startup().replace("Startup","Lensi Apps"))
             # except:
             #         pass
-            os.chdir("D:\Lensi")
+            os.chdir(lensi_path)
             f = open("config.ini","w",encoding="utf-8")
             f.write(init_text)
             f.close()
         else:
             Lensi_config = configparser.ConfigParser()
-            os.chdir("D:\Lensi")
+            os.chdir(lensi_path)
             Lensi_config.read("config.ini", encoding="utf-8")
             if options == "qq_num" or options =="qq" or options =="q":
                 Lensi_config.set("Lensi","qq_num",le_set)
@@ -1311,9 +1368,9 @@ class Lensi(object):
             elif options == "NI" or options =="ni":
                 Lensi_config.set("Lensi", "NI(NormalInstall)",le_set)
             elif options == "WT" or options =="wt":
-                Lensi_config.set("Lensi", "WT(WaiteTime)",le_set)
+                Lensi_config.set("Lensi", "WT(WaitTime)",le_set)
             elif options == "help":
-                os.chdir("D:\Lensi")
+                os.chdir(lensi_path)
                 f = open("config.ini","r")
                 print(f.read())
                 f.close()
@@ -1324,7 +1381,7 @@ class Lensi(object):
 
     def uninstall(self,app_name,app_source="web"):
         if app_name == "lensi" or app_name == "Lensi":
-            shutil.rmtree("D:\Lensi")
+            shutil.rmtree(lensi_path)
             os.system("pip uninstall lensi")
         if app_source == "web":
             print("Using util.")
@@ -1337,18 +1394,18 @@ class Lensi(object):
             if result == "Y" or result == "y":
                 uninstall_software(app_name_real)
             try:
-                portable_list = os.listdir("D:\Lensi\APP_Portable")
-                install_list =  os.listdir("D:\Lensi\APP_Installed")
+                portable_list = os.listdir(lensi_path + "\APP_Portable")
+                install_list =  os.listdir(lensi_path + "\APP_Installed")
                 app_name_chose_p = process.extractOne(app_name,portable_list)[0]
                 if fuzz.partial_ratio(app_name,app_name_chose_p) >= 90:
-                    app_path = "D:\Lensi\APP_Portable\\" + app_name_chose_p
+                    app_path = lensi_path + "\APP_Portable\\" + app_name_chose_p
                     output = "Move " + app_path + "?(Y/N)"
                     choice = input(output)
                     if choice == "Y" or choice == "y":
                         shutil.rmtree(app_path)
                 app_name_chose_i = process.extractOne(app_name,install_list)[0]
                 if fuzz.partial_ratio(app_name,app_name_chose_i) >= 90:
-                    app_path = "D:\Lensi\APP_Portable\\" + app_name_chose_i
+                    app_path = lensi_path + "\APP_Portable\\" + app_name_chose_i
                     output = "Move " + app_path + "?(Y/N)"
                     choice = input(output)
                     if choice == "Y" or choice == "y":
@@ -1365,20 +1422,20 @@ class Lensi(object):
             print("Sorry. Lensi doesn't support this source now. /(ㄒoㄒ)/~~")
 
     def list(self):
-        os.chdir("D:\Lensi")
+        os.chdir(lensi_path)
         f = open("app_list.txt","r")
         print(f.read())
         f.close()
         print("In D:\Lensi\APP_Portable")
-        print(os.listdir("D:\Lensi\APP_Portable"))
+        print(os.listdir(lensi_path + "\APP_Portable"))
         print("In D:\Lensi\APP_Installed")
-        print(os.listdir("D:\Lensi\APP_Installed"))
+        print(os.listdir(lensi_path + "\APP_Installed"))
     
     def init(self):
         choice = input("Do you really want to clean everything?(Y/N)")
         if choice == "y" or choice =="Y":
             try:
-                shutil.rmtree("D:\Lensi")
+                shutil.rmtree(lensi_path)
             except:
                 pass
             print("Has cleaned D:\Lensi")

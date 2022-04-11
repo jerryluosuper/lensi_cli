@@ -1,9 +1,7 @@
 #!/usr/bin/env python
 # -*- coding:utf-8 _*-
-from glob import glob
 import os
 import shutil
-import time
 from urllib import request
 import requests
 from urllib.request import urlopen
@@ -170,6 +168,36 @@ def choco_search(app_name,limmit_num): #choco搜索解析
         return search_list_all_a
     except:
         return None
+
+def add_uninstall_app(app_name):
+    os.chdir(lensi_path)
+    f = open("app_list.txt","r")
+    app_list = f.readlines()
+    f.close()
+    app_list_real = []
+    for i in app_list:
+        if i.find("Lensi") == -1:
+            j=i.split()
+            app_name_real = j[:len(j)-2]
+            name = ""
+            for k in app_name_real:
+                name = name + k +" "
+            name = name.strip(" ")
+            del(j[:len(j)-2])
+            j.insert(0,name.lower())
+            j[len(j)-1] = j[len(j)-1].replace("\n","")
+            app_list_real.append(j)
+    for i in range(0,len(app_list_real)):
+        if fuzz.partial_ratio(app_list_real[i][0],app_name)>=HAF:
+            del(app_list_real[i])
+        else:
+            app_list_real[i][0] = app_list_real[i][0].title()
+    write_text = ""
+    for i in range(0,len(app_list_real)):
+        write_text = write_text + app_list_real[i][0] + " " + app_list_real[i][1] + " " + app_list_real[i][2] + "\n"
+    write_text = "Lensi 0.1.2 pip\n" + write_text
+    with open("app_list.txt","w") as f:
+        f.write(write_text)
 
 def winget_search(app_name,limmit_num):#winget 搜索解析
     '''
@@ -368,20 +396,6 @@ class myThread_search (threading.Thread):
             return self.result  
         except Exception:  
             return None  
-    def globaltrace(self, frame, event, arg): 
-        if event == 'call': 
-            return self.localtrace 
-        else: 
-            return None
-
-    def localtrace(self, frame, event, arg): 
-        if self.killed: 
-            if event == 'line': 
-                raise SystemExit() 
-        return self.localtrace 
-
-    def kill(self): 
-        self.killed = True
 
 def web_360_search(app_name,limmit_num):
     headers = {'User-Agent':' Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/64.0.3282.140 Safari/537.36 Edge/18.17763'}
@@ -755,11 +769,10 @@ def uninstall_software(software_name):
         print("Not found installed program.")
         return
     else:
-        print("uninstall "+ software_name)
         uninstall_string = uninstall_string.replace('\\','\\\\')
         os.chdir("\\".join(uninstall_string.split('\\')[:-1]))
         cmd=uninstall_string.split('\\')[-1]
-        print(cmd)
+        print("Running",cmd,"in","\\".join(uninstall_string.split('\\')[:-1]))
         os.system(cmd)
         choice = input("Do you want to clean the folder(Y/N):")
         if choice == "Y" or choice == "y":
@@ -780,7 +793,7 @@ def add_installed_app(app_name,app_source,app_version=" "):
             return
     app_list_real = []
     for i in app_list:
-        if i.find("scoop") == -1 and i.find("choco") == -1 and i.find("winget") == -1:
+        if i.find("scoop") == -1 and i.find("choco") == -1 and i.find("winget") == -1 and i.find("Lensi") == -1:
             j=i.split()
             app_name_real = j[:len(j)-2]
             name = ""
@@ -797,16 +810,18 @@ def add_installed_app(app_name,app_source,app_version=" "):
         # print(app_list_real[i][0])
         # print(app_name)
         # print(fuzz.partial_ratio(app_list_real[i][0],app_name))
-        if fuzz.partial_ratio(app_list_real[i][0],app_name)>=90:
+        if fuzz.partial_ratio(app_list_real[i][0],app_name)>=HAF:
             app_list_real[i][0] = app_name
             app_list_real[i][1] = app_version
             app_list_real[i][2] = app_source
             Has_yes = 1
+        app_list_real[i][0] = app_list_real[i][0]
     write_text = ""
     for i in range(0,len(app_list_real)):
         write_text = write_text + app_list_real[i][0] + " " + app_list_real[i][1] + " " + app_list_real[i][2] + "\n"
     if Has_yes == 0:
         write_text = write_text + app_name + " " + app_version + " " + app_source + "\n"
+    write_text = "Lensi 0.1.2 pip\n" + write_text
     with open("app_list.txt","w") as f:
         f.write(write_text)
 
@@ -864,8 +879,8 @@ class Lensi(object):
             #     os.mkdir(start_menu)
             os.chdir(lensi_path)
             Lensi_config = configparser.ConfigParser()
-            global EW,qq_num,baoku_num,DAI,SO,ES,EC,EW,SIP,WT,scoop_num,choco_num,winget_num,buckets_list_install,NI,init_text
-            init_text = "[Lensi]\nqq_num = 1\n360_num = 1\nscoop_num = 1\nwinget_num = 1\nchoco_num = 1\nDAI(DeletedAfterInstalled) = True\nSO(SimplyOpen) = True\nES(EnableScoop) = True\nEC(EnableChoco) = True \nEW(EnableWinget) = True\nSIP(ScoopInstallPath) = D:\\Scoop\nNI(NormalInstall)=qq\nWT(WaitTime)=3"
+            global EW,qq_num,baoku_num,DAI,SO,ES,EC,EW,SIP,WT,scoop_num,choco_num,winget_num,buckets_list_install,NI,init_text,HAF
+            init_text = "[Lensi]\nqq_num = 1\n360_num = 1\nscoop_num = 1\nwinget_num = 1\nchoco_num = 1\nDAI(DeletedAfterInstalled) = True\nSO(SimplyOpen) = True\nES(EnableScoop) = True\nEC(EnableChoco) = True \nEW(EnableWinget) = True\nSIP(ScoopInstallPath) = D:\\Scoop\nNI(NormalInstall)=qq\nWT(WaitTime)=3\nHAF(HowAccurateFuzzywuzzy)=80"
             Lensi_config.read("config.ini", encoding="utf-8")
             qq_num = Lensi_config.getint("Lensi", "qq_num")
             baoku_num = Lensi_config.getint("Lensi", "360_num")
@@ -880,6 +895,7 @@ class Lensi(object):
             SIP = Lensi_config.get("Lensi","SIP(ScoopInstallPath)")
             NI = Lensi_config.get("Lensi","NI(NormalInstall)")
             WT = Lensi_config.get("Lensi","WT(WaitTime)")
+            HAF = Lensi_config.getint("Lensi","HAF(HowAccurateFuzzywuzzy)")
         except:
             print("Initing the config.ini")
             os.chdir(lensi_path)
@@ -903,6 +919,7 @@ class Lensi(object):
             SIP = Lensi_config.get("Lensi","SIP(ScoopInstallPath)")
             NI = Lensi_config.get("Lensi","NI(NormalInstall)")
             WT = Lensi_config.getint("Lensi","WT(WaitTime)")
+            HAF = Lensi_config.getint("Lensi","HAF(HowAccurateFuzzywuzzy)")
             if Lensi_check_choco() == False:
                 print("Didn't install choco")
                 EC = "F"
@@ -1280,7 +1297,7 @@ class Lensi(object):
             for i in real_app_update:
                 search_list = lensi_search_all(i[2],i[0],1,SIP)
                 if search_list != None:
-                    if fuzz.partial_ratio(search_list[0][0],i[0]) >= 90:
+                    if fuzz.partial_ratio(search_list[0][0],i[0]) >= HAF:
                         if search_list[0][1] != i[1]:
                             DownloadandInstallFile(search_list[0][5],search_list[0][8],DAI,search_list[0][0],SO,search_list[0][1])
                         else:
@@ -1299,7 +1316,7 @@ class Lensi(object):
                     break
             search_list = lensi_search_all(real_app_update[2],app_name,1,SIP)
             if search_list != None:
-                if fuzz.partial_ratio(search_list[0][0],real_app_update[0]) >= 90:
+                if fuzz.partial_ratio(search_list[0][0],real_app_update[0]) >= HAF:
                     if search_list[0][1] != real_app_update[1]:
                         DownloadandInstallFile(search_list[0][5],search_list[0][8],DAI,search_list[0][0],SO,search_list[0][1])
                     else:
@@ -1369,19 +1386,24 @@ class Lensi(object):
                 Lensi_config.set("Lensi", "NI(NormalInstall)",le_set)
             elif options == "WT" or options =="wt":
                 Lensi_config.set("Lensi", "WT(WaitTime)",le_set)
+            elif options == "HAF" or options =="haf":
+                Lensi_config.set("Lensi", "HAF(HowAccurateFuzzywuzzy)",le_set)    
             elif options == "help":
                 os.chdir(lensi_path)
                 f = open("config.ini","r")
                 print(f.read())
                 f.close()
-                print("The available source is : qq(q) 360(b) scoop(s) choco(c) winget(w)")
+                print("The available source is : qq(q) 360(b) scoop(s) hippo(h) choco(c) winget(w)")
             else:
                 print("Sorry, Lensi didn't have this setting.")
             Lensi_config.write(open("config.ini", "w"))
 
     def uninstall(self,app_name,app_source="web"):
         if app_name == "lensi" or app_name == "Lensi":
-            shutil.rmtree(lensi_path)
+            try:
+                shutil.rmtree(lensi_path)
+            except:
+                pass
             os.system("pip uninstall lensi")
         if app_source == "web":
             print("Using util.")
@@ -1396,22 +1418,25 @@ class Lensi(object):
             try:
                 portable_list = os.listdir(lensi_path + "\APP_Portable")
                 install_list =  os.listdir(lensi_path + "\APP_Installed")
-                app_name_chose_p = process.extractOne(app_name,portable_list)[0]
-                if fuzz.partial_ratio(app_name,app_name_chose_p) >= 90:
-                    app_path = lensi_path + "\APP_Portable\\" + app_name_chose_p
-                    output = "Move " + app_path + "?(Y/N)"
-                    choice = input(output)
-                    if choice == "Y" or choice == "y":
-                        shutil.rmtree(app_path)
-                app_name_chose_i = process.extractOne(app_name,install_list)[0]
-                if fuzz.partial_ratio(app_name,app_name_chose_i) >= 90:
-                    app_path = lensi_path + "\APP_Portable\\" + app_name_chose_i
-                    output = "Move " + app_path + "?(Y/N)"
-                    choice = input(output)
-                    if choice == "Y" or choice == "y":
-                        shutil.rmtree(app_path)
+                if portable_list != []:
+                    app_name_chose_p = process.extractOne(app_name,portable_list)[0]
+                    if fuzz.partial_ratio(app_name,app_name_chose_p) >= HAF:
+                        app_path = lensi_path + "\APP_Portable\\" + app_name_chose_p
+                        output = "Move " + app_path + "?(Y/N)"
+                        choice = input(output)
+                        if choice == "Y" or choice == "y":
+                            shutil.rmtree(app_path)
+                if install_list != []:
+                    app_name_chose_i = process.extractOne(app_name,install_list)[0]
+                    if fuzz.partial_ratio(app_name,app_name_chose_i) >= HAF:
+                        app_path = lensi_path + "\APP_Installed\\" + app_name_chose_i
+                        output = "Move " + app_path + "?(Y/N)"
+                        choice = input(output)
+                        if choice == "Y" or choice == "y":
+                            shutil.rmtree(app_path)
             except:
                 pass
+            add_uninstall_app(app_name)
         elif app_source == "S" or "scoop" or "s":
             Scoop_uninstall_app(app_name)
         elif app_source == "C" or "choco" or "c":
@@ -1426,9 +1451,9 @@ class Lensi(object):
         f = open("app_list.txt","r")
         print(f.read())
         f.close()
-        print("In D:\Lensi\APP_Portable")
+        print("In",lensi_path,"\APP_Portable")
         print(os.listdir(lensi_path + "\APP_Portable"))
-        print("In D:\Lensi\APP_Installed")
+        print("In",lensi_path,"\APP_Installed")
         print(os.listdir(lensi_path + "\APP_Installed"))
     
     def init(self):
@@ -1438,7 +1463,7 @@ class Lensi(object):
                 shutil.rmtree(lensi_path)
             except:
                 pass
-            print("Has cleaned D:\Lensi")
+            print("Has cleaned",lensi_path)
 
 
 def main():

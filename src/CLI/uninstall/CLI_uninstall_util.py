@@ -1,7 +1,11 @@
 import shutil
 import win32api,win32con
 import os
-from fuzzywuzzy import process
+from fuzzywuzzy import process,fuzz
+
+global lensi_path
+lensi_path = "D:\Lensi"
+
 def get_all_installed_software():
     reg_root = win32con.HKEY_LOCAL_MACHINE
     reg_paths=[r"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall",r"SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall",r"Software\Microsoft\Windows\CurrentVersion\Uninstall"]
@@ -41,11 +45,10 @@ def uninstall_software(software_name):
         print("Not found installed program.")
         return
     else:
-        print("uninstall "+ software_name)
         uninstall_string = uninstall_string.replace('\\','\\\\')
         os.chdir("\\".join(uninstall_string.split('\\')[:-1]))
         cmd=uninstall_string.split('\\')[-1]
-        print(cmd)
+        print("Running",cmd,"in","\\".join(uninstall_string.split('\\')[:-1]))
         os.system(cmd)
         choice = input("Do you want to clean the folder(Y/N):")
         if choice == "Y" or choice == "y":
@@ -60,4 +63,35 @@ def uninstall(app_name):
     print("Uninstalling",app_name_real)
     uninstall_software(app_name_real)
 
-uninstall("steam")
+def add_uninstall_app(app_name):
+    os.chdir(lensi_path)
+    f = open("app_list.txt","r")
+    app_list = f.readlines()
+    f.close()
+    app_list_real = []
+    for i in app_list:
+        if i.find("Lensi") == -1:
+            j=i.split()
+            app_name_real = j[:len(j)-2]
+            name = ""
+            for k in app_name_real:
+                name = name + k +" "
+            name = name.strip(" ")
+            del(j[:len(j)-2])
+            j.insert(0,name.lower())
+            j[len(j)-1] = j[len(j)-1].replace("\n","")
+            app_list_real.append(j)
+    for i in range(0,len(app_list_real)):
+        if fuzz.partial_ratio(app_list_real[i][0],app_name)>=90:
+            del(app_list_real[i])
+        else:
+            app_list_real[i][0] = app_list_real[i][0].title()
+    write_text = ""
+    for i in range(0,len(app_list_real)):
+        write_text = write_text + app_list_real[i][0] + " " + app_list_real[i][1] + " " + app_list_real[i][2] + "\n"
+    write_text = "Lensi 0.1.2 pip\n" + write_text
+    with open("app_list.txt","w") as f:
+        f.write(write_text)
+
+# uninstall("steam")
+add_uninstall_app("steam")

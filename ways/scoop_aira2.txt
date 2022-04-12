@@ -1,0 +1,30 @@
+function dl_with_cache_aria2($app, $version, $manifest, $architecture, $dir, $cookies = $null, $use_cache = $true, $check_hash = $true) {
+    $data = @{}
+    $urls = @(script:url $manifest $architecture)
+
+    # aria2 input file
+    $urlstxt = Join-Path $cachedir "$app.txt"
+    $urlstxt_content = ''
+    $download_finished = $true
+
+    # aria2 options
+    $options = @(
+        "--input-file='$urlstxt'"
+        "--user-agent='$(Get-UserAgent)'"
+        "--allow-overwrite=true"
+        "--auto-file-renaming=false"
+        "--retry-wait=$(get_config 'aria2-retry-wait' 2)"
+        "--split=$(get_config 'aria2-split' 5)"
+        "--max-connection-per-server=$(get_config 'aria2-max-connection-per-server' 5)"
+        "--min-split-size=$(get_config 'aria2-min-split-size' '5M')"
+        "--console-log-level=warn"
+        "--enable-color=false"
+        "--no-conf=true"
+        "--follow-metalink=true"
+        "--metalink-preferred-protocol=https"
+        "--min-tls-version=TLSv1.2"
+        "--stop-with-process=$PID"
+        "--continue"
+        "--summary-interval=0"
+        "--metalink-preferred-protocol=https"
+    )

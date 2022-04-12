@@ -569,7 +569,7 @@ def lensi_search_all(source,app_name,limmit_num,SIP="D:\Scoop"):#搜索大函数
 
 def Scoop_install_scoop_silence():
     scoop_install_all = open("scoop_install_all.ps1", "w")
-    scoop_install_all.write("mkdir D:" + "\n" + "mkdir D:\Scoop" + "\n" + "mkdir D:\GlobalScoopApps" + "\n" + "mkdir D:\ScoopCache"+ "\n" + "Set-ExecutionPolicy RemoteSigned -scope CurrentUser;"+ "\n" + "$env:SCOOP='D:\Scoop'"+ "\n" + "[Environment]::SetEnvironmentVariable('SCOOP', $env:SCOOP, 'User')"+ "\n" + "$env:SCOOP_GLOBAL='D:\GlobalScoopApps'"+ "\n" + "[Environment]::SetEnvironmentVariable('SCOOP_GLOBAL', $env:SCOOP_GLOBAL, 'Machine')"+ "\n" + "$env:SCOOP_CACHE='D:\ScoopCache'"+ "\n" + "[Environment]::SetEnvironmentVariable('SCOOP_CACHE', $env:SCOOP_CACHE, 'Machine')"+ "\n" + "iwr -useb https://gitee.com/glsnames/scoop-installer/raw/master/bin/install.ps1 | iex"+ "\n" + "scoop config SCOOP_REPO 'https://gitee.com/glsnames/Scoop-Core'"+ "\n" + "scoop update"+ "\n" + "scoop install aria2 git sudo"+ "\n" + "scoop config aria2-split 32"+ "\n" + "scoop config aria2-max-connection-per-server 64"+ "\n" + "scoop bucket add main 'https://gitclone.com/github.com/ScoopInstaller/Main.git'"+ "\n" + "scoop bucket add extras 'https://gitee.com/xumuyao/scoop-extras.git'"+ "\n" + "scoop bucket add nonportable 'https://gitee.com/lane_swh/scoop-nonportable.git'"+ "\n" + "scoop bucket add games 'https://gitee.com/helloCodeke/scoop-games.git'"+ "\n" + "scoop bucket add java 'https://gitee.com/xumuyao/scoop-java.git'"+ "\n" + "scoop bucket add versions 'https://gitee.com/lane_swh/scoop-versions.git'"+ "\n" + "scoop bucket add scoopcn 'https://gitclone.com/github.com/scoopcn/scoopcn.git'"+ "\n" + "scoop bucket add apps 'https://gitee.com/kkzzhizhou/scoop-apps'"+ "\n" + "scoop bucket add nerd-fonts 'https://gitee.com/helloCodeke/scoop-nerd-fonts.git'"+ "\n" + "scoop bucket add scoopMain 'https://gitee.com/glsnames/scoop-main.git'"+ "\n" + "scoop update")
+    scoop_install_all.write("mkdir D:" + "\n" + "mkdir D:\Scoop" + "\n" + "mkdir D:\GlobalScoopApps" + "\n" + "mkdir D:\ScoopCache"+ "\n" + "Set-ExecutionPolicy RemoteSigned -scope CurrentUser;"+ "\n" + "$env:SCOOP='D:\Scoop'"+ "\n" + "[Environment]::SetEnvironmentVariable('SCOOP', $env:SCOOP, 'User')"+ "\n" + "$env:SCOOP_GLOBAL='D:\GlobalScoopApps'"+ "\n" + "[Environment]::SetEnvironmentVariable('SCOOP_GLOBAL', $env:SCOOP_GLOBAL, 'Machine')"+ "\n" + "$env:SCOOP_CACHE='D:\ScoopCache'"+ "\n" + "[Environment]::SetEnvironmentVariable('SCOOP_CACHE', $env:SCOOP_CACHE, 'Machine')"+ "\n" + "iwr -useb https://gitee.com/glsnames/scoop-installer/raw/master/bin/install.ps1 | iex"+ "\n" + "scoop config SCOOP_REPO 'https://gitee.com/glsnames/Scoop-Core'"+ "\n" + "scoop update"+ "\n" + "scoop install aria2 git sudo"+ "\n" + "scoop config aria2-split 16"+ "\n" + "scoop config aria2-max-connection-per-server 16"+ "\n" + "scoop bucket add main 'https://gitclone.com/github.com/ScoopInstaller/Main.git'"+ "\n" + "scoop bucket add extras 'https://gitee.com/xumuyao/scoop-extras.git'"+ "\n" + "scoop bucket add nonportable 'https://gitee.com/lane_swh/scoop-nonportable.git'"+ "\n" + "scoop bucket add games 'https://gitee.com/helloCodeke/scoop-games.git'"+ "\n" + "scoop bucket add java 'https://gitee.com/xumuyao/scoop-java.git'"+ "\n" + "scoop bucket add versions 'https://gitee.com/lane_swh/scoop-versions.git'"+ "\n" + "scoop bucket add scoopcn 'https://gitclone.com/github.com/scoopcn/scoopcn.git'"+ "\n" + "scoop bucket add apps 'https://gitee.com/kkzzhizhou/scoop-apps'"+ "\n" + "scoop bucket add nerd-fonts 'https://gitee.com/helloCodeke/scoop-nerd-fonts.git'"+ "\n" + "scoop bucket add scoopMain 'https://gitee.com/glsnames/scoop-main.git'"+ "\n" + "scoop update")
     scoop_install_all.close()
     os.system("powershell -File scoop_install_all.ps1 -NoProfile -WindowStyle Hidden")
 
@@ -655,16 +655,22 @@ def DownloadandInstallFile(download_url,app_source,DAI,app_name,SO,app_version):
     if download_url is None or save_url is None or file_name is None:
         print('参数错误')
         return None
-    res = requests.get(download_url,stream=True) 
-    total_size = int(int(res.headers["Content-Length"])/1024+0.5)
-    # 获取文件地址
-    file_path = os.path.join(save_url, file_name)
-    # 打开本地文件夹路径file_path，以二进制流方式写入，保存到本地
-    with open(file_path, 'wb') as fd:
-        print('开始下载文件：{},当前文件大小：{}KB'.format(file_name,total_size))
-        for chunk in tqdm(iterable=res.iter_content(1024),total=total_size,unit='k',desc=None):
-            fd.write(chunk)
+    if EAD == "True":
+        print("Using Aria2")
+        order = AP +' --dir=' +save_url +' --out=' + file_name +  ' --console-log-level=warn --allow-overwrite=true --split=16 --max-connection-per-server=16 --split=5 --no-conf=true --summary-interval=0 --min-split-size=20M "' + download_url + '"'
+        os.system(order)
         print(file_name+' 下载完成！')
+    else:
+        res = requests.get(download_url,stream=True) 
+        total_size = int(int(res.headers["Content-Length"])/1024+0.5)
+        # 获取文件地址
+        file_path = os.path.join(save_url, file_name)
+        # 打开本地文件夹路径file_path，以二进制流方式写入，保存到本地
+        with open(file_path, 'wb') as fd:
+            print('开始下载文件：{},当前文件大小：{}KB'.format(file_name,total_size))
+            for chunk in tqdm(iterable=res.iter_content(1024),total=total_size,unit='k',desc=None):
+                fd.write(chunk)
+            print(file_name+' 下载完成！')
     os.chdir(lensi_path + "\Download")
     install(file_name,app_name,SO,app_source,app_version)
     # os.system(file_name)
@@ -685,6 +691,19 @@ def Lensi_check_choco():
     else:
         return True
 
+def DownloadFile_aria2(download_url,app_source):
+    save_url = lensi_path + "\Download"
+    if app_source == "qq" or app_source == "360":
+        file_name = download_url[download_url.rfind("/"):]
+        file_name = file_name.strip("/")
+    elif app_source == "hippo":
+        file_name = download_url[download_url.rfind("="):]
+        file_name = file_name.strip("=")
+    order = AP +' --dir=' +save_url +' --out=' + file_name +  ' --console-log-level=warn --allow-overwrite=true --split=16 --max-connection-per-server=16 --split=5 --no-conf=true --summary-interval=0 --min-split-size=20M "' + download_url + '"'
+    os.system(order)
+    print(file_name+' 下载完成！')
+    os.system("start D:\Lensi\Download")
+
 def DownloadFile(download_url,app_source):
     save_url = lensi_path + "\Download"
     if app_source == "qq" or app_source == "360":
@@ -696,17 +715,26 @@ def DownloadFile(download_url,app_source):
     if download_url is None or save_url is None or file_name is None:
         print('参数错误')
         return None
-    res = requests.get(download_url,stream=True) 
-    total_size = int(int(res.headers["Content-Length"])/1024+0.5)
-    # 获取文件地址
-    file_path = os.path.join(save_url, file_name)
-    # 打开本地文件夹路径file_path，以二进制流方式写入，保存到本地
-    with open(file_path, 'wb') as fd:
-        print('开始下载文件：{},当前文件大小：{}KB'.format(file_name,total_size))
-        for chunk in tqdm(iterable=res.iter_content(1024),total=total_size,unit='k',desc=None):
-            fd.write(chunk)
+    if EAD == "True":
+        print("Using Aria2")
+        order = AP +' --dir=' +save_url +' --out=' + file_name +  ' --console-log-level=warn --allow-overwrite=true --split=16 --max-connection-per-server=16 --split=5 --no-conf=true --summary-interval=0 --min-split-size=20M "' + download_url + '"'
+        os.system(order)
         print(file_name+' 下载完成！')
-    os.system("start D:\Lensi\Download")
+        cmd = "start " + save_url
+        os.system(cmd)
+    else:
+        res = requests.get(download_url,stream=True) 
+        total_size = int(int(res.headers["Content-Length"])/1024+0.5)
+        # 获取文件地址
+        file_path = os.path.join(save_url, file_name)
+        # 打开本地文件夹路径file_path，以二进制流方式写入，保存到本地
+        with open(file_path, 'wb') as fd:
+            print('开始下载文件：{},当前文件大小：{}KB'.format(file_name,total_size))
+            for chunk in tqdm(iterable=res.iter_content(1024),total=total_size,unit='k',desc=None):
+                fd.write(chunk)
+            print(file_name+' 下载完成！')
+        cmd = "start " + lensi_path + "\Download"
+        os.system(cmd)
 
 def Scoop_update():
     os.system("scoop update")
@@ -726,8 +754,7 @@ def pprint_easy(i,SIP="D:\Scoop"):
     else:
         Downloadfrom = i[5]
     print("Downloading from:",Downloadfrom)
-    if i[8] == "hippo":
-        print("Installing from: lensi install",i[0],"hippo")
+    print("Installing from: lensi install",i[0],i[8])
     print("-------------------")
 
 def get_all_installed_software():
@@ -879,8 +906,8 @@ class Lensi(object):
             #     os.mkdir(start_menu)
             os.chdir(lensi_path)
             Lensi_config = configparser.ConfigParser()
-            global EW,qq_num,baoku_num,DAI,SO,ES,EC,EW,SIP,WT,scoop_num,choco_num,winget_num,buckets_list_install,NI,init_text,HAF
-            init_text = "[Lensi]\nqq_num = 1\n360_num = 1\nscoop_num = 1\nwinget_num = 1\nchoco_num = 1\nDAI(DeletedAfterInstalled) = True\nSO(SimplyOpen) = True\nES(EnableScoop) = True\nEC(EnableChoco) = True \nEW(EnableWinget) = True\nSIP(ScoopInstallPath) = D:\\Scoop\nNI(NormalInstall)=qq\nWT(WaitTime)=3\nHAF(HowAccurateFuzzywuzzy)=80"
+            global EW,qq_num,baoku_num,DAI,SO,ES,EC,EW,SIP,WT,scoop_num,choco_num,winget_num,buckets_list_install,NI,init_text,HAF,EAD,AP
+            init_text = "[Lensi]\nqq_num = 1\n360_num = 1\nscoop_num = 1\nwinget_num = 1\nchoco_num = 1\nDAI(DeletedAfterInstalled) = True\nSO(SimplyOpen) = True\nES(EnableScoop) = True\nEC(EnableChoco) = True \nEW(EnableWinget) = True\nSIP(ScoopInstallPath) = D:\\Scoop\nNI(NormalInstall)=qq\nWT(WaitTime)=3\nHAF(HowAccurateFuzzywuzzy)=80\nEAD(EnableAria2Download)=False\nAP(Aria2Path)=D:\Scoop\shims\aria2c.exe"
             Lensi_config.read("config.ini", encoding="utf-8")
             qq_num = Lensi_config.getint("Lensi", "qq_num")
             baoku_num = Lensi_config.getint("Lensi", "360_num")
@@ -896,6 +923,8 @@ class Lensi(object):
             NI = Lensi_config.get("Lensi","NI(NormalInstall)")
             WT = Lensi_config.get("Lensi","WT(WaitTime)")
             HAF = Lensi_config.getint("Lensi","HAF(HowAccurateFuzzywuzzy)")
+            EAD = Lensi_config.get("Lensi","EAD(EnableAria2Download)")
+            AP = Lensi_config.get("Lensi","AP(Aria2Path)")
         except:
             print("Initing the config.ini")
             os.chdir(lensi_path)
@@ -920,6 +949,8 @@ class Lensi(object):
             NI = Lensi_config.get("Lensi","NI(NormalInstall)")
             WT = Lensi_config.getint("Lensi","WT(WaitTime)")
             HAF = Lensi_config.getint("Lensi","HAF(HowAccurateFuzzywuzzy)")
+            EAD = Lensi_config.get("Lensi","EAD(EnableAria2Download)")
+            AP = Lensi_config.get("Lensi","AP(Aria2Path)")
             if Lensi_check_choco() == False:
                 print("Didn't install choco")
                 EC = "F"
@@ -1388,6 +1419,10 @@ class Lensi(object):
                 Lensi_config.set("Lensi", "WT(WaitTime)",le_set)
             elif options == "HAF" or options =="haf":
                 Lensi_config.set("Lensi", "HAF(HowAccurateFuzzywuzzy)",le_set)    
+            elif options == "EAD" or options =="ead":
+                Lensi_config.set("Lensi", "EAD(EnableAria2Download)",le_set)    
+            elif options == "AP" or options =="ap":
+                Lensi_config.set("Lensi", "AP(Aria2Path)",le_set)    
             elif options == "help":
                 os.chdir(lensi_path)
                 f = open("config.ini","r")

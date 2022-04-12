@@ -727,7 +727,7 @@ def pprint_easy(i,SIP="D:\Scoop"):
         Downloadfrom = i[5]
     print("Downloading from:",Downloadfrom)
     if i[8] == "hippo":
-        print("Installing from: lensi install",i[0])
+        print("Installing from: lensi install",i[0],"hippo")
     print("-------------------")
 
 def get_all_installed_software():

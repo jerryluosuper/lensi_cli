@@ -58,4 +58,8 @@ WT(Waittime) = 3
 （搜索等待时间，默认3，若为0或负数则为等待所有源搜索完毕）
 HAF(HowAccurateFuzzywuzzy) = 80
 （更新，卸载所用检测是否存在这个软件的参数，默认80，可以调到80以上更加准确，但有可能查找不到）
+EAD(EnableAria2Download) = False
+（使用Aria2代理下载，默认关闭）
+AP(Aria2Path) = D:\Scoop\shims\aira2c.exe
+（Aria2安装地址，默认为由Scoop安装的地址）
 ```

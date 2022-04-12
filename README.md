@@ -3,7 +3,7 @@
 
 + Lensi安装`pip install lensi`
 + Lensi CLI为360 qq scoop choco winget hippo的聚合命令行工具。
-+ Lensi 现更新到0.1.3 （更新内容：Aria2代理）
++ Lensi 现更新到0.1.2 （更新内容：upgarde命令）(0.1.3 demo: Aria2代理下载）
 + PS. 本人即将面临中考，暂时没有长期维护打算
 ## 使用方法
 + CLI的制作为python fire模块

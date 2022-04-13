@@ -1005,10 +1005,6 @@ class Lensi(object):
                 os.mkdir(lensi_path + "\APP_Portable")
             if os.path.exists(lensi_path + "\APP_Installed") == False:
                 os.mkdir(lensi_path + "\APP_Installed")
-            # start_menu = winshell.startup().replace("Startup","Lensi Apps")
-            # # print(start_menu)
-            # if os.path.exists(start_menu) == False:
-            #     os.mkdir(start_menu)
             os.chdir(lensi_path)
             Lensi_config = configparser.ConfigParser()
             global EW,qq_num,baoku_num,DAI,SO,ES,EC,EW,SIP,WT,scoop_num,choco_num,winget_num,buckets_list_install,NI,init_text,HAF,EAD,AP,CDS,CSS,TR,RT
@@ -1064,6 +1060,10 @@ class Lensi(object):
             CSS = Lensi_config.get("Lensi","CSS(CreateStartmenuShotcut)")
             TR = Lensi_config.get("Lensi","TR(ToReplace)")
             RT = Lensi_config.get("Lensi","RT(ReplaceTo)")
+            start_menu = winshell.startup().replace("Startup","Lensi Apps")
+            # print(start_menu)
+            if os.path.exists(start_menu) == False and CSS == "True":
+                os.mkdir(start_menu)
             if Lensi_check_choco() == False:
                 print("Didn't install choco")
                 EC = "F"

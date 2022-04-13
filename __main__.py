@@ -188,10 +188,13 @@ def add_uninstall_app(app_name):
             j[len(j)-1] = j[len(j)-1].replace("\n","")
             app_list_real.append(j)
     for i in range(0,len(app_list_real)):
-        if fuzz.partial_ratio(app_list_real[i][0],app_name)>=HAF:
-            del(app_list_real[i])
-        else:
-            app_list_real[i][0] = app_list_real[i][0].title()
+        try:
+            if fuzz.partial_ratio(app_list_real[i][0],app_name)>=HAF:
+                del(app_list_real[i])
+            else:
+                app_list_real[i][0] = app_list_real[i][0].title()
+        except:
+            pass
     write_text = ""
     for i in range(0,len(app_list_real)):
         write_text = write_text + app_list_real[i][0] + " " + app_list_real[i][1] + " " + app_list_real[i][2] + "\n"
@@ -617,15 +620,24 @@ def install(file_name,app_name,SO,app_source,app_version):
             file_name_real = process.extractOne(file_name_exe,file_list)[0]
             os.chdir(lensi_path + "\APP_Portable\\" + app_name)
             file_list_real = os.listdir()
-            if file_list_real[0].find(".exe") != -1:
+            is_it_only_one_thing = 1
+            for i in range(0,len(file_list_real)):
+                if file_list_real[i].find(".") == -1:
+                    is_it_only_one_thing = 0
+            if is_it_only_one_thing == 1:
                 app_folder = app_name +"//" + file_list_real[0]
                 # create_shortcut_to_startmenu(app_folder,file_name_real)
-                create_shortcut_to_desktop(app_folder,file_name_real)
+                if CDS == "True":
+                    create_shortcut_to_desktop(app_folder,file_name_real)
+                if CSS == "True":
+                    create_shortcut_to_startmenu(app_folder,file_name_real)
             else:
-                # create_shortcut_to_startmenu(app_name,file_name_real)
-                create_shortcut_to_desktop(app_name,file_name_real)
+                if CSS == "True":
+                    create_shortcut_to_startmenu(app_name,file_name_real)
+                if CDS == "True":
+                    create_shortcut_to_desktop(app_name,file_name_real)
         elif file_name_kinds == "msi":
-            cmd = "msiexec /i " + lensi_path + "\Download\\" + file_name + " /norestart  /passive"
+            cmd = "msiexec /i " + lensi_path + "\Download\\" + file_name + " /norestart /passive"
             # print(cmd)
             os.system(cmd)
         elif file_name_kinds == "exe":
@@ -906,8 +918,8 @@ class Lensi(object):
             #     os.mkdir(start_menu)
             os.chdir(lensi_path)
             Lensi_config = configparser.ConfigParser()
-            global EW,qq_num,baoku_num,DAI,SO,ES,EC,EW,SIP,WT,scoop_num,choco_num,winget_num,buckets_list_install,NI,init_text,HAF,EAD,AP
-            init_text = "[Lensi]\nqq_num = 1\n360_num = 1\nscoop_num = 1\nwinget_num = 1\nchoco_num = 1\nDAI(DeletedAfterInstalled) = True\nSO(SimplyOpen) = True\nES(EnableScoop) = True\nEC(EnableChoco) = True \nEW(EnableWinget) = True\nSIP(ScoopInstallPath) = D:\\Scoop\nNI(NormalInstall)=qq\nWT(WaitTime)=3\nHAF(HowAccurateFuzzywuzzy)=80\nEAD(EnableAria2Download)=False\nAP(Aria2Path)=D:\Scoop\shims\aria2c.exe"
+            global EW,qq_num,baoku_num,DAI,SO,ES,EC,EW,SIP,WT,scoop_num,choco_num,winget_num,buckets_list_install,NI,init_text,HAF,EAD,AP,CDS,CSS
+            init_text = "[Lensi]\nqq_num = 1\n360_num = 1\nscoop_num = 1\nwinget_num = 1\nchoco_num = 1\nDAI(DeletedAfterInstalled) = True\nSO(SimplyOpen) = False\nES(EnableScoop) = True\nEC(EnableChoco) = True \nEW(EnableWinget) = True\nSIP(ScoopInstallPath) = D:\\Scoop\nNI(NormalInstall)=qq\nWT(WaitTime)=3\nHAF(HowAccurateFuzzywuzzy)=80\nEAD(EnableAria2Download)=False\nAP(Aria2Path)=D:\Scoop\shims\aria2c.exe\nCDS(CreateDesktopShotcut) = True\nCSS(CreateStartmenuShotcut) = False"
             Lensi_config.read("config.ini", encoding="utf-8")
             qq_num = Lensi_config.getint("Lensi", "qq_num")
             baoku_num = Lensi_config.getint("Lensi", "360_num")
@@ -925,6 +937,8 @@ class Lensi(object):
             HAF = Lensi_config.getint("Lensi","HAF(HowAccurateFuzzywuzzy)")
             EAD = Lensi_config.get("Lensi","EAD(EnableAria2Download)")
             AP = Lensi_config.get("Lensi","AP(Aria2Path)")
+            CDS = Lensi_config.get("Lensi","CDS(CreateDesktopShotcut)")
+            CSS = Lensi_config.get("Lensi","CSS(CreateStartmenuShotcut)")
         except:
             print("Initing the config.ini")
             os.chdir(lensi_path)
@@ -951,6 +965,8 @@ class Lensi(object):
             HAF = Lensi_config.getint("Lensi","HAF(HowAccurateFuzzywuzzy)")
             EAD = Lensi_config.get("Lensi","EAD(EnableAria2Download)")
             AP = Lensi_config.get("Lensi","AP(Aria2Path)")
+            CDS = Lensi_config.get("Lensi","CDS(CreateDesktopShotcut)")
+            CSS = Lensi_config.get("Lensi","CSS(CreateStartmenuShotcut)")
             if Lensi_check_choco() == False:
                 print("Didn't install choco")
                 EC = "F"
@@ -1423,6 +1439,10 @@ class Lensi(object):
                 Lensi_config.set("Lensi", "EAD(EnableAria2Download)",le_set)    
             elif options == "AP" or options =="ap":
                 Lensi_config.set("Lensi", "AP(Aria2Path)",le_set)    
+            elif options == "CDS" or options =="cds":
+                Lensi_config.set("Lensi", "CDS(CreateDesktopShotcut)",le_set) 
+            elif options == "CSS" or options =="css":
+                Lensi_config.set("Lensi", "CSS(CreateStartmenuShotcut)",le_set) 
             elif options == "help":
                 os.chdir(lensi_path)
                 f = open("config.ini","r")

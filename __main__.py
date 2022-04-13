@@ -1152,10 +1152,12 @@ class Lensi(object):
         elif app_name == "choco" or app_name == "Choco":
             choco_install()
         elif app_name.find("\\") != -1 and app_name.find(".") == -1:
+            print("Installing from scoop")
             app_name = SIP +"\\buckets\\" + app_name[:app_name.find('\\')] + "\\bucket\\" + app_name[app_name.find('\\'):].strip("\\") + ".json"
             json_buckets_replace(app_name,TR,RT)
             Scoop_install_app(app_name)
             json_buckets_replace(app_name,RT,TR)
+            add_installed_app(app_name,"Scoop")
         elif os.path.exists(app_name) or app_name.find(".\\") != -1:
             print("Installing from",app_name)
             in_put_list(app_name)
@@ -1192,17 +1194,17 @@ class Lensi(object):
                     app_name_real = search_result[0][0]
                     app_version = search_result[0][1]
                     DownloadandInstallFile(download_url,"qq",DAI,app_name_real,SO,app_version)
-                elif ES == "True" and NI == "scoop" or NI == "s":
+                elif ES == "True" and NI == "scoop" or NI == "s" or NI == "Scoop":
                     print("Installing from scoop")
                     if app_name.find("\\") != -1:
                         app_name = SIP +"\\buckets\\" + app_name[:app_name.find('\\')] + "\\bucket\\" + app_name[app_name.find('\\'):].strip("\\") + ".json"
                     Scoop_install_app(app_name)
                     add_installed_app(app_name,"Scoop")
-                elif EC == "True" and NI == "choco" or NI == "c":
+                elif EC == "True" and NI == "choco" or NI == "c" or NI == "Choco":
                     print("Installing from choco")
                     choco_install_app(app_name)
                     add_installed_app(app_name,"choco")
-                elif EW == "True" and NI == "winget" or NI == "w":
+                elif EW == "True" and NI == "winget" or NI == "w" or NI == "Winget":
                     print("Installing from winget")
                     try:
                         winget_id  = winget_search(app_name,1)[0][4]
@@ -1235,17 +1237,21 @@ class Lensi(object):
                 app_version = search_result[0][1]
                 # print(download_url)
                 DownloadandInstallFile(download_url,"hippo",DAI,app_name_real,SO,app_version)
-            elif ES == "True" and app_source == "scoop" or app_source == "s":
+            elif ES == "True" and app_source == "scoop" or app_source == "s" or app_source == "Scoop":
                 print("Installing from scoop")
                 if app_name.find("\\") != -1:
                     app_name = SIP +"\\buckets\\" + app_name[:app_name.find('\\')] + "\\bucket\\" + app_name[app_name.find('\\'):].strip("\\") + ".json"
-                Scoop_install_app(app_name)
+                    json_buckets_replace(app_name,TR,RT)
+                    Scoop_install_app(app_name)
+                    json_buckets_replace(app_name,RT,TR)
+                else:
+                    Scoop_install_app(app_name)
                 add_installed_app(app_name,"Scoop")
-            elif EC == "True" and app_source == "choco" or app_source == "c":
+            elif EC == "True" and app_source == "choco" or app_source == "c" or app_source == "Choco":
                 print("Installing from choco")
                 choco_install_app(app_name)
                 add_installed_app(app_name,"choco")
-            elif EW == "True" and app_source == "winget" or app_source == "w":
+            elif EW == "True" and app_source == "winget" or app_source == "w" or app_source=="Winget":
                 print("Installing from winget")
                 try:
                     winget_id  = winget_search(app_name,1)[0][4]
@@ -1655,12 +1661,12 @@ class Lensi(object):
                 pass
             print("Has cleaned",lensi_path)
     
-    def replace(self,to_replace="TR",replace_to="RT"):
-        if to_replace=="TR" or replace_to=="RT":
-            to_replace = TR
-            replace_to = RT
-        cnt = Scoop_buckets_replace(SIP,to_replace,replace_to)
-        print("Has replace",cnt,to_replace,"to",replace_to)
+    # def replace(self,to_replace="TR",replace_to="RT"):
+    #     if to_replace=="TR" or replace_to=="RT":
+    #         to_replace = TR
+    #         replace_to = RT
+    #     cnt = Scoop_buckets_replace(SIP,to_replace,replace_to)
+    #     print("Has replace",cnt,to_replace,"to",replace_to)
 
 
 def main():

@@ -692,13 +692,13 @@ def DownloadandInstallFile(download_url,app_source,DAI,app_name,SO,app_version):
 
 def Lensi_check_scoop():
     check_result = subprocess.getoutput('scoop -h')
-    if check_result.find("不是内部或外部命令，也不是可运行的程序或批处理文件。") != -1:
+    if check_result.find("不") != -1:
         return False
     else:
         return True
 def Lensi_check_choco():
     check_result = subprocess.getoutput('choco -h')
-    if check_result.find("不是内部或外部命令，也不是可运行的程序或批处理文件。") != -1:
+    if check_result.find("不") != -1:
         return False
     else:
         return True
@@ -894,6 +894,40 @@ def load_list_app_installed():
             app_list_real.append(j)
     return app_list_real
 
+def Scoop_buckets_replace(Scoop_install_place,to_replace,replace_to):#遍历scoop bucket 存入csv中
+    #简单来说就是获取每个buckets里bucket的文件
+    Scoop_update()
+    if not os.path.exists(Scoop_install_place + "\\buckets\\replaced\\bucket"):
+        os.makedirs(Scoop_install_place + "\\buckets\\replaced\\bucket")
+    cnt = 0
+    os.chdir(Scoop_install_place+"\\buckets")
+    buckets_names = os.listdir()
+    for i in buckets_names:
+        dir = Scoop_install_place + "\\buckets\\" + i + "\\bucket"
+        os.chdir(dir)
+        bucket_list = os.listdir()
+        for j in bucket_list:
+            try:
+                with open(j,"r",encoding='utf-8') as f:
+                    json_text = f.read()
+                if json_text.find(to_replace) != -1:
+                    json_text = json_text.replace(to_replace,replace_to)
+                    cnt = cnt + 1
+                    os.chdir(Scoop_install_place + "\\buckets\\replaced\\bucket")
+                    with open(j,"w+") as f:
+                        f.write(json_text)
+                os.chdir(dir)
+            except:
+                pass
+    return cnt
+
+def json_buckets_replace(json_install_place,to_replace,replace_to):#遍历scoop bucket 存入csv中
+    with open(json_install_place,"r",encoding='utf-8') as f:
+        json_text = f.read()
+    if json_text.find(to_replace) != -1:
+        json_text = json_text.replace(to_replace,replace_to)
+        with open(json_install_place,"w+") as f:
+            f.write(json_text)
 class Lensi(object):
     def __init__(self) -> None:
         try:
@@ -918,8 +952,8 @@ class Lensi(object):
             #     os.mkdir(start_menu)
             os.chdir(lensi_path)
             Lensi_config = configparser.ConfigParser()
-            global EW,qq_num,baoku_num,DAI,SO,ES,EC,EW,SIP,WT,scoop_num,choco_num,winget_num,buckets_list_install,NI,init_text,HAF,EAD,AP,CDS,CSS
-            init_text = "[Lensi]\nqq_num = 1\n360_num = 1\nscoop_num = 1\nwinget_num = 1\nchoco_num = 1\nDAI(DeletedAfterInstalled) = True\nSO(SimplyOpen) = False\nES(EnableScoop) = True\nEC(EnableChoco) = True \nEW(EnableWinget) = True\nSIP(ScoopInstallPath) = D:\\Scoop\nNI(NormalInstall)=qq\nWT(WaitTime)=3\nHAF(HowAccurateFuzzywuzzy)=80\nEAD(EnableAria2Download)=False\nAP(Aria2Path)=D:\Scoop\shims\aria2c.exe\nCDS(CreateDesktopShotcut) = True\nCSS(CreateStartmenuShotcut) = False"
+            global EW,qq_num,baoku_num,DAI,SO,ES,EC,EW,SIP,WT,scoop_num,choco_num,winget_num,buckets_list_install,NI,init_text,HAF,EAD,AP,CDS,CSS,TR,RT
+            init_text = "[Lensi]\nqq_num = 1\n360_num = 1\nscoop_num = 1\nwinget_num = 1\nchoco_num = 1\nDAI(DeletedAfterInstalled) = True\nSO(SimplyOpen) = False\nES(EnableScoop) = True\nEC(EnableChoco) = True \nEW(EnableWinget) = True\nSIP(ScoopInstallPath) = D:\\Scoop\nNI(NormalInstall)=qq\nWT(WaitTime)=3\nHAF(HowAccurateFuzzywuzzy)=80\nEAD(EnableAria2Download)=False\nAP(Aria2Path)=D:\Scoop\shims\aria2c.exe\nCDS(CreateDesktopShotcut) = True\nCSS(CreateStartmenuShotcut) = False\nTR(ToReplace)=github.com\nRT(ReplaceTo)=hub.fastgit.xyz"
             Lensi_config.read("config.ini", encoding="utf-8")
             qq_num = Lensi_config.getint("Lensi", "qq_num")
             baoku_num = Lensi_config.getint("Lensi", "360_num")
@@ -939,6 +973,8 @@ class Lensi(object):
             AP = Lensi_config.get("Lensi","AP(Aria2Path)")
             CDS = Lensi_config.get("Lensi","CDS(CreateDesktopShotcut)")
             CSS = Lensi_config.get("Lensi","CSS(CreateStartmenuShotcut)")
+            TR = Lensi_config.get("Lensi","TR(ToReplace)")
+            RT = Lensi_config.get("Lensi","RT(ReplaceTo)")
         except:
             print("Initing the config.ini")
             os.chdir(lensi_path)
@@ -967,6 +1003,8 @@ class Lensi(object):
             AP = Lensi_config.get("Lensi","AP(Aria2Path)")
             CDS = Lensi_config.get("Lensi","CDS(CreateDesktopShotcut)")
             CSS = Lensi_config.get("Lensi","CSS(CreateStartmenuShotcut)")
+            TR = Lensi_config.get("Lensi","TR(ToReplace)")
+            RT = Lensi_config.get("Lensi","RT(ReplaceTo)")
             if Lensi_check_choco() == False:
                 print("Didn't install choco")
                 EC = "F"
@@ -1051,11 +1089,16 @@ class Lensi(object):
     def install(self,app_name,app_source="all"):
         if app_name == "scoop" or app_name == "Scoop":
             Scoop_install_scoop_silence()
+            pass
         elif app_name == "choco" or app_name == "Choco":
             choco_install()
+            pass
         elif app_name.find("\\") != -1:
                 app_name = SIP +"\\buckets\\" + app_name[:app_name.find('\\')] + "\\bucket\\" + app_name[app_name.find('\\'):].strip("\\") + ".json"
+                json_buckets_replace(app_name,TR,RT)
                 Scoop_install_app(app_name)
+                json_buckets_replace(app_name,RT,TR)
+                pass
         if app_source == "all":
             if NI == "Hippo" or NI=="hippo" or app_source == "h":
                 try:
@@ -1442,7 +1485,11 @@ class Lensi(object):
             elif options == "CDS" or options =="cds":
                 Lensi_config.set("Lensi", "CDS(CreateDesktopShotcut)",le_set) 
             elif options == "CSS" or options =="css":
-                Lensi_config.set("Lensi", "CSS(CreateStartmenuShotcut)",le_set) 
+                Lensi_config.set("Lensi", "CSS(CreateStartmenuShotcut)",le_set)
+            elif options == "TR" or options =="tr":
+                Lensi_config.set("Lensi", "TR(ToReplace)",le_set)
+            elif options == "RT" or options =="rt":
+                Lensi_config.set("Lensi", "RT(ReplaceTo)",le_set) 
             elif options == "help":
                 os.chdir(lensi_path)
                 f = open("config.ini","r")
@@ -1519,6 +1566,13 @@ class Lensi(object):
             except:
                 pass
             print("Has cleaned",lensi_path)
+    
+    def replace(self,to_replace="TR",replace_to="RT"):
+        if to_replace=="TR" or replace_to=="RT":
+            to_replace = TR
+            replace_to = RT
+        cnt = Scoop_buckets_replace(SIP,to_replace,replace_to)
+        print("Has replace",cnt,to_replace,"to",replace_to)
 
 
 def main():

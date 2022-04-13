@@ -1,7 +1,7 @@
 from setuptools import setup
 setup(  
     name = 'Lensi',  
-    version = '0.1.2', 
+    version = '0.1.3', 
     description = 'Lensi, install apps from QQ 360 Hippo Scoop Winget Choco',  
     license = 'MIT License',  
     install_requires = ["bs4","fuzzywuzzy","fire","requests","configparser","tqdm","winshell","xpinyin"],  
